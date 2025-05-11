@@ -534,3 +534,56 @@ a {
     width: 95%;
   }
 }
+
+/* Matches Tab Styles */
+.matches-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background-color: transparent;
+  overflow: auto;
+  gap: 10px;
+}
+
+.match-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 10px;
+  background-color: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 4px solid var(--primary-light);
+}
+
+.match-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.match-teams {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.home-team, .away-team {
+  font-weight: 600;
+}
+
+.vs {
+  color: var(--muted);
+  font-size: 0.9em;
+}
+
+.match-date {
+  color: var(--accent);
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background-color: var(--accent-light);
+}

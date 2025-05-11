@@ -3,6 +3,15 @@
 import { useState, useEffect } from "react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
+import iplSchedule from "./ipl-schedule-json.json";
+
+interface Match {
+  matchNo: number;
+  date: string;
+  homeTeam: string;
+  awayTeam: string;
+  venue: string;
+}
 
 const client = generateClient<Schema>();
 
@@ -11,9 +20,13 @@ export default function Todo() {
   const [activeTab, setActiveTab] = useState("add");
   const [todoContent, setTodoContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [matches, setMatches] = useState<Match[]>([]);
 
   useEffect(() => {
     listTodos();
+    if (iplSchedule && iplSchedule.matches) {
+      setMatches(iplSchedule.matches);
+    }
   }, []);
 
   function listTodos() {
@@ -62,6 +75,15 @@ export default function Todo() {
           </svg>
           Read ToDo
         </button>
+        <button 
+          className={`tab ${activeTab === "matches" ? "active" : ""}`} 
+          onClick={() => setActiveTab("matches")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
+            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z"/>
+          </svg>
+          Matches
+        </button>
       </div>
 
       <div className="tab-content">
@@ -95,7 +117,7 @@ export default function Todo() {
               </button>
             </form>
           </div>
-        ) : (
+        ) : activeTab === "read" ? (
           <div className="read-todo">
             <h2>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
@@ -132,6 +154,38 @@ export default function Todo() {
                 <button className="secondary-button" onClick={() => setActiveTab("add")}>
                   Create Your First ToDo
                 </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="matches-tab">
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
+                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z"/>
+              </svg>
+              IPL Matches Schedule
+            </h2>
+            {matches.length > 0 ? (
+              <ul className="matches-list">
+                {matches.map((match) => (
+                  <li key={match.matchNo} className="match-item">
+                    <div className="match-teams">
+                      <span className="home-team">{match.homeTeam}</span>
+                      <span className="vs">vs</span>
+                      <span className="away-team">{match.awayTeam}</span>
+                    </div>
+                    <span className="match-date">{match.date}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.5 3.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11zm2-2a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7zM0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zm1.5.5A.5.5 0 0 1 1 13V6a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-13z"/>
+                  </svg>
+                </div>
+                <p>No matches available.</p>
               </div>
             )}
           </div>
