@@ -79,8 +79,8 @@ button:focus-visible {
   outline: 3px solid rgba(108, 92, 231, 0.25);
 }
 
-/* Tabbed Todo Interface Styles */
-.todo-container {
+/* Tabbed Interface Styles */
+.fantasy-tracker-container {
   width: 100%;
   margin-top: 1.5rem;
 }
@@ -129,9 +129,31 @@ button:focus-visible {
   background-color: var(--white);
   padding: 2rem;
   border-radius: var(--border-radius);
-  min-height: 300px;
+  min-height: 400px;
+  max-height: 600px;
+  overflow-y: auto;
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
+}
+
+/* Add fixed height for all tab content containers */
+.add-todo, .read-todo, .matches-tab {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure match lists don't cause container expansion */
+.matches-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Ensure todo lists don't cause container expansion */
+.todo-list {
+  overflow-y: auto;
+  flex: 1;
+  max-height: none;
 }
 
 .todo-input {
@@ -586,4 +608,26 @@ a {
   padding: 4px 10px;
   border-radius: 12px;
   background-color: var(--accent-light);
+}
+
+/* Add consistent styling for tab headings */
+.add-todo h2, .read-todo h2, .matches-tab h2 {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Ensure match items have consistent sizing */
+.match-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--white);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  border-left: 4px solid var(--primary-light);
 }
