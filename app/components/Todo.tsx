@@ -17,7 +17,7 @@ const client = generateClient<Schema>();
 
 export default function IPLFantasyTracker() {
   const [notes, setNotes] = useState<Array<Schema["Todo"]["type"]>>([]);
-  const [activeTab, setActiveTab] = useState("add");
+  const [activeTab, setActiveTab] = useState("read");
   const [noteContent, setNoteContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -58,15 +58,6 @@ export default function IPLFantasyTracker() {
     <div className="fantasy-tracker-container">
       <div className="tabs">
         <button 
-          className={`tab ${activeTab === "add" ? "active" : ""}`} 
-          onClick={() => setActiveTab("add")}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
-            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-          </svg>
-          Add Fantasy Note
-        </button>
-        <button 
           className={`tab ${activeTab === "read" ? "active" : ""}`} 
           onClick={() => setActiveTab("read")}
         >
@@ -74,6 +65,15 @@ export default function IPLFantasyTracker() {
             <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
           </svg>
           My Fantasy Notes
+        </button>
+        <button 
+          className={`tab ${activeTab === "add" ? "active" : ""}`} 
+          onClick={() => setActiveTab("add")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+          </svg>
+          Add Fantasy Note
         </button>
         <button 
           className={`tab ${activeTab === "matches" ? "active" : ""}`} 
@@ -87,37 +87,7 @@ export default function IPLFantasyTracker() {
       </div>
 
       <div className="tab-content">
-        {activeTab === "add" ? (
-          <div className="add-todo">
-            <h2>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
-                <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
-              </svg>
-              Add Fantasy Note
-            </h2>
-            <form onSubmit={createNote} className="add-form">
-              <input
-                type="text"
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                placeholder="Add player notes, team predictions, or fantasy strategy..."
-                className="todo-input"
-                disabled={isSubmitting}
-              />
-              <button 
-                type="submit" 
-                className="add-button"
-                disabled={isSubmitting || !noteContent.trim()}
-              >
-                {isSubmitting ? (
-                  <span className="spinner"></span>
-                ) : (
-                  <>Add Note</>
-                )}
-              </button>
-            </form>
-          </div>
-        ) : activeTab === "read" ? (
+        {activeTab === "read" ? (
           <div className="read-todo">
             <h2>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
@@ -156,6 +126,36 @@ export default function IPLFantasyTracker() {
                 </button>
               </div>
             )}
+          </div>
+        ) : activeTab === "add" ? (
+          <div className="add-todo">
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
+                <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+              </svg>
+              Add Fantasy Note
+            </h2>
+            <form onSubmit={createNote} className="add-form">
+              <input
+                type="text"
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                placeholder="Add player notes, team predictions, or fantasy strategy..."
+                className="todo-input"
+                disabled={isSubmitting}
+              />
+              <button 
+                type="submit" 
+                className="add-button"
+                disabled={isSubmitting || !noteContent.trim()}
+              >
+                {isSubmitting ? (
+                  <span className="spinner"></span>
+                ) : (
+                  <>Add Note</>
+                )}
+              </button>
+            </form>
           </div>
         ) : (
           <div className="matches-tab">
