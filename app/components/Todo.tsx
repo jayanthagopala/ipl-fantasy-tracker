@@ -1,0 +1,142 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "@/amplify/data/resource";
+
+const client = generateClient<Schema>();
+
+export default function Todo() {
+  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [activeTab, setActiveTab] = useState("add");
+  const [todoContent, setTodoContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    listTodos();
+  }, []);
+
+  function listTodos() {
+    client.models.Todo.observeQuery().subscribe({
+      next: (data) => setTodos([...data.items]),
+    });
+  }
+
+  async function createTodo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!todoContent.trim()) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      await client.models.Todo.create({
+        content: todoContent,
+      });
+      
+      setTodoContent("");
+    } catch (error) {
+      console.error("Error creating todo:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="todo-container">
+      <div className="tabs">
+        <button 
+          className={`tab ${activeTab === "add" ? "active" : ""}`} 
+          onClick={() => setActiveTab("add")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+          </svg>
+          Add ToDo
+        </button>
+        <button 
+          className={`tab ${activeTab === "read" ? "active" : ""}`} 
+          onClick={() => setActiveTab("read")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
+            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+          </svg>
+          Read ToDo
+        </button>
+      </div>
+
+      <div className="tab-content">
+        {activeTab === "add" ? (
+          <div className="add-todo">
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
+                <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+              </svg>
+              Add a New ToDo
+            </h2>
+            <form onSubmit={createTodo} className="add-form">
+              <input
+                type="text"
+                value={todoContent}
+                onChange={(e) => setTodoContent(e.target.value)}
+                placeholder="What needs to be done?"
+                className="todo-input"
+                disabled={isSubmitting}
+              />
+              <button 
+                type="submit" 
+                className="add-button"
+                disabled={isSubmitting || !todoContent.trim()}
+              >
+                {isSubmitting ? (
+                  <span className="spinner"></span>
+                ) : (
+                  <>Add ToDo</>
+                )}
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="read-todo">
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
+                <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0zM7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
+              </svg>
+              Your ToDo List
+            </h2>
+            {todos.length > 0 ? (
+              <ul className="todo-list">
+                {todos.map((todo) => (
+                  <li key={todo.id} className="todo-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="check-icon" viewBox="0 0 16 16">
+                      <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                    </svg>
+                    <span className="todo-content">{todo.content}</span>
+                    <span className="todo-date">
+                      {todo.createdAt && new Date(todo.createdAt).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.5 3.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-11zm2-2a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7zM0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6v7zm1.5.5A.5.5 0 0 1 1 13V6a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-13z"/>
+                  </svg>
+                </div>
+                <p>No todos yet. Add some from the "Add ToDo" tab!</p>
+                <button className="secondary-button" onClick={() => setActiveTab("add")}>
+                  Create Your First ToDo
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+} 
