@@ -1,0 +1,273 @@
+/* IPL Matches Component Styles */
+
+/* Match list container */
+.matches-tab .matches-list {
+  list-style-type: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  overflow-y: auto !important;
+  max-height: 500px !important;
+  padding-right: 10px !important;
+}
+
+/* Match item styling */
+.matches-tab .match-item {
+  position: relative !important;
+  border-radius: 12px !important;
+  padding: 20px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  background-color: #ffffff !important;
+  overflow: hidden !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+  margin-bottom: 16px !important;
+  border: 1px solid #eaeaea !important;
+}
+
+.matches-tab .match-item::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 0 !important;
+  opacity: 0.5 !important;
+  border-radius: 12px !important;
+}
+
+.matches-tab .match-item:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.matches-tab .match-item:hover::before {
+  opacity: 0.7 !important;
+}
+
+/* Match number */
+.matches-tab .match-number {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  display: inline-block !important;
+  margin-bottom: 12px !important;
+  font-size: 0.9rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Teams section */
+.matches-tab .match-teams {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 16px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
+}
+
+/* Team logo badge */
+.matches-tab .team-logo-badge {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 45% !important;
+}
+
+/* VS separator */
+.matches-tab .vs {
+  font-weight: 700 !important;
+  font-size: 1.2rem !important;
+  color: #363636 !important;
+  position: relative !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Team logo */
+.matches-tab .match-team-logo {
+  width: 60px !important;
+  height: 60px !important;
+  object-fit: contain !important;
+  transition: transform 0.3s ease !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+  background-color: white !important;
+  border-radius: 50% !important;
+  padding: 4px !important;
+}
+
+.matches-tab .match-item:hover .match-team-logo {
+  transform: scale(1.1) !important;
+}
+
+/* Team names */
+.matches-tab .home-team, 
+.matches-tab .away-team {
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  text-align: center !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+}
+
+/* Match info section */
+.matches-tab .match-info {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  padding: 10px 15px !important;
+  border-radius: 8px !important;
+  position: relative !important;
+  z-index: 1 !important;
+  margin-top: 10px !important;
+}
+
+.matches-tab .match-date-container, 
+.matches-tab .match-venue {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.9rem !important;
+}
+
+.matches-tab .date-icon, 
+.matches-tab .venue-icon {
+  color: #555555 !important;
+}
+
+/* Team-specific gradients with stronger colors */
+.matches-tab .csk-gradient::before {
+  background: linear-gradient(135deg, #f7ce35 0%, #f7a237 100%) !important;
+}
+
+.matches-tab .mi-gradient::before {
+  background: linear-gradient(135deg, #004b8d 0%, #0078bc 100%) !important;
+}
+
+.matches-tab .rcb-gradient::before {
+  background: linear-gradient(135deg, #d00027 0%, #000000 100%) !important;
+}
+
+.matches-tab .kkr-gradient::before {
+  background: linear-gradient(135deg, #3a225d 0%, #7b31a2 100%) !important;
+}
+
+.matches-tab .dc-gradient::before {
+  background: linear-gradient(135deg, #0078bc 0%, #17479e 100%) !important;
+}
+
+.matches-tab .srh-gradient::before {
+  background: linear-gradient(135deg, #ff822a 0%, #dc2626 100%) !important;
+}
+
+.matches-tab .rr-gradient::before {
+  background: linear-gradient(135deg, #254aa5 0%, #ff69b4 100%) !important;
+}
+
+.matches-tab .pbks-gradient::before {
+  background: linear-gradient(135deg, #ea1a85 0%, #dc2626 100%) !important;
+}
+
+.matches-tab .gt-gradient::before {
+  background: linear-gradient(135deg, #1b2133 0%, #0b4973 100%) !important;
+}
+
+.matches-tab .lsg-gradient::before {
+  background: linear-gradient(135deg, #a0e6ff 0%, #0189d1 100%) !important;
+}
+
+/* Default gradient for special cases */
+.matches-tab .ipl-gradient::before {
+  background: linear-gradient(135deg, #0078bc 0%, #ff7c26 100%) !important;
+}
+
+/* Team-specific text colors */
+.matches-tab .team-csk {
+  color: #f2a900 !important;
+}
+
+.matches-tab .team-mi {
+  color: #004ba0 !important;
+}
+
+.matches-tab .team-rcb {
+  color: #d00027 !important;
+}
+
+.matches-tab .team-kkr {
+  color: #3a225d !important;
+}
+
+.matches-tab .team-dc {
+  color: #0078bc !important;
+}
+
+.matches-tab .team-srh {
+  color: #ff822a !important;
+}
+
+.matches-tab .team-rr {
+  color: #254aa5 !important;
+}
+
+.matches-tab .team-pbks {
+  color: #ed1b24 !important;
+}
+
+.matches-tab .team-gt {
+  color: #1b2133 !important;
+}
+
+.matches-tab .team-lsg {
+  color: #0189d1 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .matches-tab .match-teams {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  
+  .matches-tab .team-logo-badge {
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+  }
+  
+  .matches-tab .vs {
+    margin: 10px 0 !important;
+  }
+  
+  .matches-tab .match-info {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+  
+  .matches-tab .match-team-logo {
+    width: 40px !important;
+    height: 40px !important;
+  }
+} 
