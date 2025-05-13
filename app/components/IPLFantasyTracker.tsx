@@ -22,6 +22,29 @@ interface MatchPrediction {
   prediction: string;
 }
 
+interface FantasyUser {
+  id: number;
+  team_name: string;
+}
+
+interface FantasyPoints {
+  matchNo: number;
+  userId: number;
+  points: number;
+}
+
+const FANTASY_USERS: FantasyUser[] = [
+  { id: 1, team_name: "CheemsRajah" },
+  { id: 2, team_name: "Anantha Team" },
+  { id: 3, team_name: "JUSTIN CHALLENGERS" },
+  { id: 4, team_name: "Vjvignesh94" },
+  { id: 5, team_name: "Garuda Tejas" },
+  { id: 6, team_name: "Sundar Night Fury" },
+  { id: 7, team_name: "JAYAGAN ARMY" },
+  { id: 8, team_name: "Jais Royal Challengers" },
+  { id: 9, team_name: "Devilish 11" }
+];
+
 const client = generateClient<Schema>();
 
 export default function IPLFantasyTracker() {
@@ -32,6 +55,11 @@ export default function IPLFantasyTracker() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<number | null>(null);
   const [predictions, setPredictions] = useState<MatchPrediction[]>([]);
+  const [selectedAdminMatch, setSelectedAdminMatch] = useState<number | null>(null);
+  const [fantasyPoints, setFantasyPoints] = useState<FantasyPoints[]>([]);
+  const [userPoints, setUserPoints] = useState<{[userId: number]: string}>({});
+  const [jsonPointsInput, setJsonPointsInput] = useState<string>("");
+  const [jsonError, setJsonError] = useState<string | null>(null);
 
   useEffect(() => {
     listNotes();
@@ -43,6 +71,12 @@ export default function IPLFantasyTracker() {
     const savedPredictions = localStorage.getItem('iplPredictions');
     if (savedPredictions) {
       setPredictions(JSON.parse(savedPredictions));
+    }
+    
+    // Load saved fantasy points from localStorage
+    const savedFantasyPoints = localStorage.getItem('iplFantasyPoints');
+    if (savedFantasyPoints) {
+      setFantasyPoints(JSON.parse(savedFantasyPoints));
     }
   }, []);
 
@@ -85,6 +119,201 @@ export default function IPLFantasyTracker() {
     return prediction?.prediction || "";
   }
 
+  function handleAdminMatchClick(matchNo: number, e?: React.MouseEvent) {
+    // If the click came from inside the form area, ignore it
+    if (e && (e.target as HTMLElement).closest('.fantasy-points-form')) {
+      return;
+    }
+    
+    if (selectedAdminMatch === matchNo) {
+      setSelectedAdminMatch(null);
+      setUserPoints({});
+      setJsonPointsInput("");
+      setJsonError(null);
+    } else {
+      setSelectedAdminMatch(matchNo);
+      setJsonError(null);
+      
+      // Initialize user points input fields
+      const initialPoints: {[userId: number]: string} = {};
+      FANTASY_USERS.forEach(user => {
+        // Check if there are existing points for this user and match
+        const existingPoints = fantasyPoints.find(
+          p => p.matchNo === matchNo && p.userId === user.id
+        );
+        initialPoints[user.id] = existingPoints ? existingPoints.points.toString() : '';
+      });
+      setUserPoints(initialPoints);
+      
+      // Create JSON string of existing points or template
+      const pointsForMatch = fantasyPoints.filter(p => p.matchNo === matchNo);
+      if (pointsForMatch.length > 0) {
+        // Create JSON from existing points
+        const jsonData = pointsForMatch.map(point => {
+          const user = FANTASY_USERS.find(u => u.id === point.userId);
+          return {
+            team_name: user?.team_name || '',
+            points: point.points
+          };
+        });
+        setJsonPointsInput(JSON.stringify(jsonData, null, 2));
+      } else {
+        // Create template JSON with all users
+        const templateJson = FANTASY_USERS.map(user => ({
+          team_name: user.team_name,
+          points: 0
+        }));
+        setJsonPointsInput(JSON.stringify(templateJson, null, 2));
+      }
+    }
+  }
+  
+  function handlePointsChange(userId: number, value: string) {
+    setUserPoints(prev => ({
+      ...prev,
+      [userId]: value
+    }));
+  }
+  
+  function handleJsonInputChange(value: string) {
+    setJsonPointsInput(value);
+    setJsonError(null);
+  }
+  
+  function validateAndParseJson(): FantasyPoints[] | null {
+    try {
+      const parsedData = JSON.parse(jsonPointsInput);
+      
+      if (!Array.isArray(parsedData)) {
+        setJsonError("Input must be an array of user points");
+        return null;
+      }
+      
+      const validPoints: FantasyPoints[] = [];
+      const matchNo = selectedAdminMatch as number;
+      
+      for (const entry of parsedData) {
+        if (typeof entry !== 'object' || entry === null) {
+          setJsonError("Each entry must be an object with team_name and points");
+          return null;
+        }
+        
+        const { team_name, points } = entry;
+        
+        if (!team_name || typeof team_name !== 'string') {
+          setJsonError("Each entry must have a valid team_name string");
+          return null;
+        }
+        
+        if (points === undefined || typeof points !== 'number') {
+          setJsonError("Each entry must have valid numeric points");
+          return null;
+        }
+        
+        // Find user by team name
+        const user = FANTASY_USERS.find(u => u.team_name === team_name);
+        if (!user) {
+          setJsonError(`Unknown team name: ${team_name}`);
+          return null;
+        }
+        
+        validPoints.push({
+          matchNo,
+          userId: user.id,
+          points
+        });
+      }
+      
+      return validPoints;
+    } catch (error) {
+      setJsonError("Invalid JSON format");
+      return null;
+    }
+  }
+  
+  function saveFantasyPoints(matchNo: number) {
+    const validPoints = validateAndParseJson();
+    
+    if (validPoints && validPoints.length > 0) {
+      // Remove existing points for this match
+      const filteredPoints = fantasyPoints.filter(p => p.matchNo !== matchNo);
+      
+      // Add new points
+      const newFantasyPoints = [...filteredPoints, ...validPoints];
+      
+      // Save to state and localStorage
+      setFantasyPoints(newFantasyPoints);
+      localStorage.setItem('iplFantasyPoints', JSON.stringify(newFantasyPoints));
+      
+      // Reset selected match
+      setSelectedAdminMatch(null);
+      setUserPoints({});
+      setJsonPointsInput("");
+      setJsonError(null);
+    }
+  }
+  
+  function getPointsForMatch(matchNo: number, userId: number): number | null {
+    const pointsEntry = fantasyPoints.find(
+      p => p.matchNo === matchNo && p.userId === userId
+    );
+    
+    return pointsEntry ? pointsEntry.points : null;
+  }
+  
+  function getMatchStatus(match: Match): string {
+    const matchDate = new Date(match.date);
+    const now = new Date();
+    
+    // Check if the match has points recorded
+    const hasPoints = fantasyPoints.some(p => p.matchNo === match.matchNo);
+    
+    if (hasPoints) {
+      return "completed";
+    } else if (matchDate < now) {
+      return "in-progress";
+    } else {
+      return "upcoming";
+    }
+  }
+  
+  function calculateLeaderboard() {
+    // Calculate total points for each user
+    const userTotals: { userId: number; team_name: string; totalPoints: number; }[] = [];
+    
+    FANTASY_USERS.forEach(user => {
+      // Get all points for this user
+      const userPoints = fantasyPoints.filter(p => p.userId === user.id);
+      
+      // Calculate total
+      const totalPoints = userPoints.reduce((sum, entry) => sum + entry.points, 0);
+      
+      userTotals.push({
+        userId: user.id,
+        team_name: user.team_name,
+        totalPoints
+      });
+    });
+    
+    // Sort by total points (descending)
+    return userTotals.sort((a, b) => b.totalPoints - a.totalPoints);
+  }
+  
+  // Count completed matches
+  function getCompletedMatchesCount(): number {
+    return matches.filter(match => 
+      fantasyPoints.some(p => p.matchNo === match.matchNo)
+    ).length;
+  }
+  
+  // Get user's position changes based on points
+  function getPositionChange(currentIndex: number, userId: number): number {
+    // This is simplified - in a real app you'd track position history
+    // For demo purposes, we'll return a random change
+    const changes = [-2, -1, 0, 1, 2];
+    return changes[Math.floor(Math.random() * changes.length)];
+  }
+
   return (
     <div className="fantasy-tracker-container">
       <div className="tabs">
@@ -95,7 +324,7 @@ export default function IPLFantasyTracker() {
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
             <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33.076 33.076 0 0 1 2.5.5zm.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935zm10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935z"/>
           </svg>
-          Leaderboard
+          Fantasy Leaderboard
         </button>
         <button 
           className={`tab ${activeTab === "matches" ? "active" : ""}`} 
@@ -126,25 +355,53 @@ export default function IPLFantasyTracker() {
                 <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33.076 33.076 0 0 1 2.5.5zm.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935zm10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935z"/>
               </svg>
               <span className="leaderboard-trophy"></span>
-              Leaderboard
+              Fantasy Leaderboard
             </h2>
-            {notes.length > 0 ? (
-              <ul className="leaderboard-list">
-                {notes.map((note) => (
-                  <li key={note.id} className="leaderboard-item">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="check-icon" viewBox="0 0 16 16">
-                      <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
-                    </svg>
-                    <span className="leaderboard-content">{note.content}</span>
-                    <span className="leaderboard-date">
-                      {note.createdAt && new Date(note.createdAt).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric'
-                      })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+            
+            <div className="leaderboard-stats">
+              <div className="stat-item">
+                <div className="stat-value">{getCompletedMatchesCount()}</div>
+                <div className="stat-label">Matches Completed</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{matches.length - getCompletedMatchesCount()}</div>
+                <div className="stat-label">Upcoming Matches</div>
+              </div>
+              <div className="stat-item">
+                <div className="stat-value">{FANTASY_USERS.length}</div>
+                <div className="stat-label">Fantasy Players</div>
+              </div>
+            </div>
+            
+            {fantasyPoints.length > 0 ? (
+              <div className="fantasy-leaderboard">
+                <div className="leaderboard-header">
+                  <div className="rank-header">Rank</div>
+                  <div className="team-header">Team</div>
+                  <div className="points-header">Points</div>
+                </div>
+                <ul className="leaderboard-list">
+                  {calculateLeaderboard().map((entry, index) => {
+                    const position = index + 1;
+                    const positionChange = getPositionChange(index, entry.userId);
+                    
+                    return (
+                      <li key={entry.userId} className={`leaderboard-item rank-${position <= 3 ? position : 'other'}`}>
+                        <div className="user-rank">
+                          <span className="rank-number">{position}</span>
+                          {positionChange !== 0 && (
+                            <span className={`position-change ${positionChange > 0 ? 'positive' : 'negative'}`}>
+                              {positionChange > 0 ? '↑' : '↓'}{Math.abs(positionChange)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="user-team">{entry.team_name}</div>
+                        <div className="user-total-points">{entry.totalPoints.toFixed(2)}</div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             ) : (
               <div className="empty-state">
                 <div className="empty-icon">
@@ -156,21 +413,25 @@ export default function IPLFantasyTracker() {
                     className="empty-state-logo"
                   />
                 </div>
-                <p>No leaderboard entries yet. Add player rankings, team standings, or match results!</p>
+                <p>No fantasy points available yet. Submit points in the Admin tab after matches are completed!</p>
                 <button className="secondary-button" onClick={() => setActiveTab("add")}>
-                  Add to Leaderboard
+                  Go to Admin
                 </button>
               </div>
             )}
           </div>
         ) : activeTab === "add" ? (
-          <div className="matches-tab">
+          <div className="matches-tab admin-tab">
             <h2>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
                 <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
               </svg>
-              Admin
+              Dream11 Fantasy Points Tracker
             </h2>
+            
+            <p className="admin-description">
+              Submit Dream11 fantasy points for each match. Select a match to enter points for all users.
+            </p>
             
             {matches.length > 0 ? (
               <ul className="matches-list">
@@ -178,20 +439,32 @@ export default function IPLFantasyTracker() {
                   const homeTeamCode = getTeamCode(match.homeTeam);
                   const awayTeamCode = getTeamCode(match.awayTeam);
                   const gradientClass = `${homeTeamCode}-gradient`;
-                  const hasPrediction = predictions.some(p => p.matchNo === match.matchNo);
+                  const matchStatus = getMatchStatus(match);
+                  const hasPoints = fantasyPoints.some(p => p.matchNo === match.matchNo);
                   
                   return (
                     <li 
                       key={match.matchNo} 
-                      className={`match-item ${gradientClass} ${hasPrediction ? 'has-prediction' : ''}`}
+                      className={`match-item ${gradientClass} ${matchStatus} ${selectedAdminMatch === match.matchNo ? 'selected' : ''}`}
+                      onClick={(e) => handleAdminMatchClick(match.matchNo, e)}
                     >
                       <div className="match-header">
                         <div className="match-number">
                           Match #{match.matchNo}
                         </div>
-                        {hasPrediction && (
-                          <div className="prediction-badge">
-                            Prediction Added
+                        {matchStatus === "completed" && (
+                          <div className="match-status completed">
+                            Points Recorded
+                          </div>
+                        )}
+                        {matchStatus === "in-progress" && (
+                          <div className="match-status in-progress">
+                            Match Completed
+                          </div>
+                        )}
+                        {matchStatus === "upcoming" && (
+                          <div className="match-status upcoming">
+                            Upcoming
                           </div>
                         )}
                       </div>
@@ -234,9 +507,78 @@ export default function IPLFantasyTracker() {
                         </div>
                       </div>
                       
-                      {hasPrediction && (
-                        <div className="saved-prediction">
-                          <strong>Your prediction:</strong> {getPredictionForMatch(match.matchNo)}
+                      {selectedAdminMatch === match.matchNo && (
+                        <div className="fantasy-points-form" onClick={(e) => e.stopPropagation()}>
+                          <h4 className="points-form-title">Enter Dream11 Fantasy Points (JSON)</h4>
+                          <div className="json-input-container">
+                            <textarea
+                              className={`json-points-input ${jsonError ? 'has-error' : ''}`}
+                              value={jsonPointsInput}
+                              onChange={(e) => handleJsonInputChange(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              placeholder="Enter points as JSON array"
+                              rows={10}
+                              spellCheck="false"
+                              autoCorrect="off"
+                              autoComplete="off"
+                            ></textarea>
+                            {jsonError && (
+                              <div className="json-error-message">{jsonError}</div>
+                            )}
+                            <div className="json-help-text">
+                              <p>Enter points as a JSON array with team_name and points for each user:</p>
+                              <pre onClick={(e) => e.stopPropagation()}>
+{`[
+  { "team_name": "CheemsRajah", "points": 85.5 },
+  { "team_name": "Anantha Team", "points": 92.0 }
+]`}
+                              </pre>
+                              <button 
+                                className="template-button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Create template JSON with all users
+                                  const templateJson = FANTASY_USERS.map(user => ({
+                                    team_name: user.team_name,
+                                    points: 0
+                                  }));
+                                  setJsonPointsInput(JSON.stringify(templateJson, null, 2));
+                                }}
+                              >
+                                Insert Template
+                              </button>
+                            </div>
+                          </div>
+                          <button 
+                            className="save-points-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              saveFantasyPoints(match.matchNo);
+                            }}
+                          >
+                            Save Points
+                          </button>
+                        </div>
+                      )}
+                      
+                      {!selectedAdminMatch && hasPoints && (
+                        <div className="fantasy-points-summary">
+                          <h4 className="points-summary-title">Recorded Points</h4>
+                          <div className="fantasy-points-grid">
+                            {FANTASY_USERS.map(user => {
+                              const points = getPointsForMatch(match.matchNo, user.id);
+                              if (points !== null) {
+                                return (
+                                  <div key={user.id} className="user-points-entry">
+                                    <span className="user-name">{user.team_name}</span>
+                                    <span className="user-points">{points}</span>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
+                          </div>
                         </div>
                       )}
                       
