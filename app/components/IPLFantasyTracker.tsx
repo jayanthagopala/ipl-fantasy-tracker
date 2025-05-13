@@ -133,6 +133,8 @@ export default function IPLFantasyTracker() {
   const [userStats, setUserStats] = useState<FantasyUser[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
   const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+  const [showAdminPasswordModal, setShowAdminPasswordModal] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -987,12 +989,76 @@ export default function IPLFantasyTracker() {
     }
   }
 
+  function handleTabChange(tab: string) {
+    if (tab === "add" && !isAdminAuthenticated) {
+      // If trying to access admin tab and not authenticated, show password modal
+      setShowAdminPasswordModal(true);
+    } else {
+      setActiveTab(tab);
+    }
+  }
+  
+  // Password modal component
+  const PasswordModal = () => {
+    if (!showAdminPasswordModal) return null;
+    
+    // Use local state for password input to prevent re-rendering of parent component
+    const [localPassword, setLocalPassword] = useState("");
+    const [localError, setLocalError] = useState<string | null>(null);
+    
+    const handleLocalSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (localPassword === "jayshah") {
+        setIsAdminAuthenticated(true);
+        setShowAdminPasswordModal(false);
+        setActiveTab("add");
+      } else {
+        setLocalError("Incorrect password. Please try again.");
+      }
+    };
+    
+    return (
+      <div className="password-modal-overlay" onClick={() => setShowAdminPasswordModal(false)}>
+        <div className="password-modal" onClick={(e) => e.stopPropagation()}>
+          <h3>Admin Authentication</h3>
+          <p>Please enter the admin password to continue.</p>
+          <form onSubmit={handleLocalSubmit}>
+            <input 
+              type="password" 
+              value={localPassword}
+              onChange={(e) => setLocalPassword(e.target.value)}
+              placeholder="Enter password"
+              className={`password-input ${localError ? 'error' : ''}`}
+              autoFocus
+            />
+            {localError && <div className="password-error">{localError}</div>}
+            <div className="password-modal-buttons">
+              <button 
+                type="button" 
+                className="cancel-button"
+                onClick={() => setShowAdminPasswordModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="submit-button"
+              >
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="fantasy-tracker-container">
       <div className="tabs">
         <button 
           className={`tab ${activeTab === "read" ? "active" : ""}`} 
-          onClick={() => setActiveTab("read")}
+          onClick={() => handleTabChange("read")}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
             <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33.076 33.076 0 0 1 2.5.5zm.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935zm10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935z"/>
@@ -1001,7 +1067,7 @@ export default function IPLFantasyTracker() {
         </button>
         <button 
           className={`tab ${activeTab === "matches" ? "active" : ""}`} 
-          onClick={() => setActiveTab("matches")}
+          onClick={() => handleTabChange("matches")}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
             <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
@@ -1011,7 +1077,7 @@ export default function IPLFantasyTracker() {
         </button>
         <button 
           className={`tab ${activeTab === "add" ? "active" : ""}`} 
-          onClick={() => setActiveTab("add")}
+          onClick={() => handleTabChange("add")}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
             <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
@@ -1521,6 +1587,7 @@ export default function IPLFantasyTracker() {
           </div>
         )}
       </div>
+      <PasswordModal />
     </div>
   );
 }
