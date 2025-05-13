@@ -1100,6 +1100,15 @@ export default function IPLFantasyTracker() {
           Schedule
         </button>
         <button 
+          className={`tab ${activeTab === "stats" ? "active" : ""}`} 
+          onClick={() => handleTabChange("stats")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="icon" viewBox="0 0 16 16">
+            <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+          </svg>
+          Stats
+        </button>
+        <button 
           className={`tab ${activeTab === "add" ? "active" : ""}`} 
           onClick={() => handleTabChange("add")}
         >
@@ -1419,6 +1428,134 @@ export default function IPLFantasyTracker() {
                   />
                 </div>
                 <p>No matches available.</p>
+              </div>
+            )}
+          </div>
+        ) : activeTab === "stats" ? (
+          <div className="stats-tab">
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
+                <path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/>
+              </svg>
+              Fantasy Statistics
+            </h2>
+            
+            {isLoadingPoints ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading statistics...</p>
+              </div>
+            ) : fantasyPoints.length > 0 ? (
+              <div className="stats-container">
+                <div className="stat-cards">
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <h3>Highest Average Score</h3>
+                    </div>
+                    <div className="stat-card-content">
+                      {(() => {
+                        // Find user with highest average score
+                        const userStats = calculateLeaderboard();
+                        const highestAvgUser = [...userStats].sort((a, b) => 
+                          (b.averageScore || 0) - (a.averageScore || 0)
+                        )[0];
+                        
+                        if (highestAvgUser) {
+                          return (
+                            <div className="stat-highlight">
+                              <div className="stat-user-name">{highestAvgUser.team_name}</div>
+                              <div className="stat-value">{highestAvgUser.averageScore.toFixed(2)} pts</div>
+                              <div className="stat-detail">Across {highestAvgUser.matchesPlayed} matches</div>
+                            </div>
+                          );
+                        } else {
+                          return <div className="no-data">No data available</div>;
+                        }
+                      })()}
+                    </div>
+                  </div>
+                  
+                  <div className="stat-card">
+                    <div className="stat-card-header">
+                      <h3>Most #1 Finishes</h3>
+                    </div>
+                    <div className="stat-card-content">
+                      {(() => {
+                        // Calculate number of #1 finishes for each user
+                        const userRankCounts: { [userId: number]: number } = {};
+                        
+                        // Get unique match numbers
+                        const matchNumbers = Array.from(new Set(fantasyPoints.map(p => p.matchNo)));
+                        
+                        // For each match, find who ranked #1
+                        matchNumbers.forEach(matchNo => {
+                          const matchPoints = fantasyPoints.filter(p => p.matchNo === matchNo);
+                          if (matchPoints.length === 0) return;
+                          
+                          // Sort by points to find #1
+                          const sortedPoints = [...matchPoints].sort((a, b) => b.points - a.points);
+                          const topUserId = sortedPoints[0]?.userId;
+                          
+                          if (topUserId) {
+                            userRankCounts[topUserId] = (userRankCounts[topUserId] || 0) + 1;
+                          }
+                        });
+                        
+                        // Find user with most #1 finishes
+                        let mostWinsUserId = 0;
+                        let mostWins = 0;
+                        
+                        Object.entries(userRankCounts).forEach(([userId, count]) => {
+                          if (count > mostWins) {
+                            mostWinsUserId = parseInt(userId);
+                            mostWins = count;
+                          }
+                        });
+                        
+                        const topUser = FANTASY_USERS.find(u => u.id === mostWinsUserId);
+                        
+                        if (topUser && mostWins > 0) {
+                          return (
+                            <div className="stat-highlight">
+                              <div className="stat-user-name">{topUser.team_name}</div>
+                              <div className="stat-value">{mostWins} times</div>
+                              <div className="stat-detail">Ranked #1 in {mostWins} matches</div>
+                            </div>
+                          );
+                        } else {
+                          return <div className="no-data">No data available</div>;
+                        }
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="additional-stats">
+                  <h3>Match Statistics</h3>
+                  <div className="stats-summary">
+                    <div className="stat-summary-item">
+                      <div className="stat-label">Matches Completed</div>
+                      <div className="stat-number">{getCompletedMatchesCount()}</div>
+                    </div>
+                    <div className="stat-summary-item">
+                      <div className="stat-label">Highest Score</div>
+                      <div className="stat-number">{getHighestMatchScore().toFixed(2)} pts</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <Image 
+                    src="/images/teams/ipl.png" 
+                    width={100}
+                    height={100}
+                    alt="IPL Logo"
+                    className="empty-state-logo"
+                  />
+                </div>
+                <p>No fantasy points available yet. Statistics will appear here after matches are recorded.</p>
               </div>
             )}
           </div>

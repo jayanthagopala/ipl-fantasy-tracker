@@ -1,25 +1,81 @@
-## AWS Amplify Next.js (App Router) Starter Template
+# IPL Fantasy Tracker
 
-This repository provides a starter template for creating applications using Next.js (App Router) and AWS Amplify, emphasizing easy setup for authentication, API, and database capabilities.
+A Next.js application powered by AWS Amplify for tracking fantasy cricket scores and predictions for the Indian Premier League (IPL).
 
 ## Overview
 
-This template equips you with a foundational Next.js application integrated with AWS Amplify, streamlined for scalability and performance. It is ideal for developers looking to jumpstart their project with pre-configured AWS services like Cognito, AppSync, and DynamoDB.
+IPL Fantasy Tracker is a web application that allows users to make predictions for IPL matches, track their performance over time, and compete with friends. The application uses Next.js App Router with AWS Amplify for backend services like authentication, API, and database functionality.
 
 ## Features
 
-- **Authentication**: Setup with Amazon Cognito for secure user authentication.
-- **API**: Ready-to-use GraphQL endpoint with AWS AppSync.
-- **Database**: Real-time database powered by Amazon DynamoDB.
+- **Match Tracking**: View the complete IPL schedule with upcoming and completed matches
+- **Predictions**: Make predictions for upcoming matches
+- **Performance Tracking**: Track user performance with points, rankings, and statistics
+- **Leaderboard**: Compare your performance against other participants
+- **Admin Dashboard**: Manage fantasy points and match statistics (password protected)
+- **Responsive Design**: Works on desktop and mobile devices
 
-## Deploying to AWS
+## Tech Stack
 
-For detailed instructions on deploying your application, refer to the [deployment section](https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/#deploy-a-fullstack-app-to-aws) of our documentation.
+- **Frontend**: Next.js 14 (App Router), React 18
+- **UI Components**: AWS Amplify UI React components
+- **Authentication**: Amazon Cognito via AWS Amplify
+- **Database**: Amazon DynamoDB
+- **API**: GraphQL with AWS AppSync
+- **Deployment**: AWS Amplify Hosting
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18 or later
+- AWS Account
+- Amplify CLI installed globally
+
+### Installation
+
+1. Clone the repository
+   ```
+   git clone <repository-url>
+   cd portfolio-nextjs-amplify
+   ```
+
+2. Install dependencies
+   ```
+   npm install
+   ```
+
+3. Initialize Amplify (if not already initialized)
+   ```
+   amplify init
+   ```
+
+4. Deploy the backend resources
+   ```
+   amplify push
+   ```
+
+5. Start the development server
+   ```
+   npm run dev
+   ```
+
+6. Open [http://localhost:3000](http://localhost:3000) to see the application
+
+## Deployment
+
+Deploy the full-stack application to AWS using Amplify:
+
+```
+amplify publish
+```
+
+For detailed instructions on deploying your application, refer to the [deployment section](https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/#deploy-a-fullstack-app-to-aws) of the Amplify documentation.
 
 ## Security
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for security-related information.
 
 ## License
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
+This project is licensed under the MIT-0 License. See the LICENSE file for details.
