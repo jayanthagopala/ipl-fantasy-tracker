@@ -103,15 +103,6 @@ export default function IPLFantasyTracker() {
 
   return (
     <div className="fantasy-tracker-container">
-      <div className="ipl-logo-header">
-        <Image 
-          src="/images/teams/ipl.png" 
-          width={70} 
-          height={70} 
-          alt="IPL Logo" 
-          className="ipl-logo" 
-        />
-      </div>
       <div className="tabs">
         <button 
           className={`tab ${activeTab === "read" ? "active" : ""}`} 

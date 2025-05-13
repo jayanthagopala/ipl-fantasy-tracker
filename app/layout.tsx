@@ -10,8 +10,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Modern ToDo App",
-  description: "A sleek, modern ToDo application built with Next.js and AWS Amplify",
+  title: "Dream11 Fantasy Tracker",
+  description: "Dream11 Fantasy Tracker",
 };
 
 export default function RootLayout({

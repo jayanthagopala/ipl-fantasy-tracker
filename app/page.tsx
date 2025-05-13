@@ -26,7 +26,7 @@ export default function App() {
       <IPLFantasyTracker />
       
       <footer className="app-footer">
-        <p>IPL Fantasy Tracker | Made with Next.js & AWS Amplify</p>
+        <p>Ee sala cup namde | Build by AI 🧠</p>
       </footer>
     </main>
   );
