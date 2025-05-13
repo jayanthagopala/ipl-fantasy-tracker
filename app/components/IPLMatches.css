@@ -391,4 +391,20 @@
     align-items: flex-start !important;
     gap: 10px !important;
   }
+}
+
+.schedule-section-title {
+  margin-top: 2rem;
+  font-size: 1.25rem;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.admin-matches-list {
+  margin-top: 1rem;
+}
+
+.admin-matches-list .match-item {
+  cursor: default;
 } 

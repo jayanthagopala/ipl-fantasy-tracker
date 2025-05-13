@@ -1176,3 +1176,75 @@ a {
 .venue-icon {
   color: var(--secondary-color);
 }
+
+/* Add these new classes for the leaderboard section */
+.leaderboard-section {
+  padding: 20px;
+}
+
+.leaderboard-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.3s;
+}
+
+.leaderboard-item:hover {
+  background-color: #f9f9f9;
+}
+
+.leaderboard-content {
+  margin-left: 15px;
+  flex: 1;
+  font-size: 16px;
+}
+
+.leaderboard-date {
+  color: #888;
+  font-size: 14px;
+}
+
+/* Map old todo classes to new leaderboard classes for backward compatibility */
+.read-todo {
+  padding: 20px;
+}
+
+.todo-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.3s;
+}
+
+.todo-item:hover {
+  background-color: #f9f9f9;
+}
+
+.todo-content {
+  margin-left: 15px;
+  flex: 1;
+  font-size: 16px;
+}
+
+.todo-date {
+  color: #888;
+  font-size: 14px;
+}

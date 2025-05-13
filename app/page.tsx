@@ -4,7 +4,7 @@ import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
 import "@aws-amplify/ui-react/styles.css";
 import "./../app/app.css";
-import IPLFantasyTracker from "./components/Todo";
+import IPLFantasyTracker from "./components/IPLFantasyTracker";
 import Image from 'next/image';
 
 Amplify.configure(outputs);

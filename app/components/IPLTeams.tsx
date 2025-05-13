@@ -42,7 +42,7 @@ export default function IPLTeams() {
       primaryColor: '#ec1c24',
       secondaryColor: '#ffffff',
       championships: 0,
-      captain: 'Faf du Plessis'
+      captain: 'Rajat Patidar'
     },
     {
       code: 'kkr',
@@ -60,7 +60,7 @@ export default function IPLTeams() {
       primaryColor: '#0078bc',
       secondaryColor: '#b4161b',
       championships: 0,
-      captain: 'Rishabh Pant'
+      captain: 'Axar Patel'
     },
     {
       code: 'srh',
@@ -78,7 +78,7 @@ export default function IPLTeams() {
       primaryColor: '#ff1d4d',
       secondaryColor: '#004ba0',
       championships: 1,
-      captain: 'Sanju Samson'
+      captain: 'Riyan Parag'
     },
     {
       code: 'pbks',
@@ -87,7 +87,7 @@ export default function IPLTeams() {
       primaryColor: '#ed1b24',
       secondaryColor: '#a4a4a4',
       championships: 0,
-      captain: 'Shikhar Dhawan'
+      captain: 'Shreyas Iyer'
     },
     {
       code: 'gt',
@@ -105,7 +105,7 @@ export default function IPLTeams() {
       primaryColor: '#a0e1fc',
       secondaryColor: '#313f9f',
       championships: 0,
-      captain: 'KL Rahul'
+      captain: 'Rishabh Pant'
     }
   ];
   

@@ -32,7 +32,6 @@ export default function IPLFantasyTracker() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<number | null>(null);
   const [predictions, setPredictions] = useState<MatchPrediction[]>([]);
-  const [currentPrediction, setCurrentPrediction] = useState("");
 
   useEffect(() => {
     listNotes();
@@ -74,26 +73,11 @@ export default function IPLFantasyTracker() {
 
   function handleMatchClick(matchNo: number) {
     setSelectedMatch(matchNo === selectedMatch ? null : matchNo);
-    const existingPrediction = predictions.find(p => p.matchNo === matchNo);
-    setCurrentPrediction(existingPrediction?.prediction || "");
   }
 
   function savePrediction(matchNo: number) {
-    if (!currentPrediction.trim()) return;
-
-    const newPredictions = [...predictions];
-    const existingIndex = newPredictions.findIndex(p => p.matchNo === matchNo);
-    
-    if (existingIndex >= 0) {
-      newPredictions[existingIndex].prediction = currentPrediction;
-    } else {
-      newPredictions.push({ matchNo, prediction: currentPrediction });
-    }
-    
-    setPredictions(newPredictions);
-    localStorage.setItem('iplPredictions', JSON.stringify(newPredictions));
+    // Function no longer needed since input and button were removed
     setSelectedMatch(null);
-    setCurrentPrediction("");
   }
 
   function getPredictionForMatch(matchNo: number): string {
@@ -136,7 +120,7 @@ export default function IPLFantasyTracker() {
 
       <div className="tab-content">
         {activeTab === "read" ? (
-          <div className="read-todo">
+          <div className="leaderboard-section">
             <h2>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
                 <path d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5c0 .538-.012 1.05-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33.076 33.076 0 0 1 2.5.5zm.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935zm10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935z"/>
@@ -145,14 +129,14 @@ export default function IPLFantasyTracker() {
               Leaderboard
             </h2>
             {notes.length > 0 ? (
-              <ul className="todo-list">
+              <ul className="leaderboard-list">
                 {notes.map((note) => (
-                  <li key={note.id} className="todo-item">
+                  <li key={note.id} className="leaderboard-item">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="check-icon" viewBox="0 0 16 16">
                       <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
                     </svg>
-                    <span className="todo-content">{note.content}</span>
-                    <span className="todo-date">
+                    <span className="leaderboard-content">{note.content}</span>
+                    <span className="leaderboard-date">
                       {note.createdAt && new Date(note.createdAt).toLocaleDateString('en-US', { 
                         month: 'short', 
                         day: 'numeric'
@@ -180,34 +164,115 @@ export default function IPLFantasyTracker() {
             )}
           </div>
         ) : activeTab === "add" ? (
-          <div className="add-todo">
+          <div className="matches-tab">
             <h2>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="icon" viewBox="0 0 16 16">
                 <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3Zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
               </svg>
               Admin
             </h2>
-            <form onSubmit={createNote} className="add-form">
-              <input
-                type="text"
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                placeholder="Add player rankings, team standings, or match results..."
-                className="todo-input"
-                disabled={isSubmitting}
-              />
-              <button 
-                type="submit" 
-                className="add-button"
-                disabled={isSubmitting || !noteContent.trim()}
-              >
-                {isSubmitting ? (
-                  <span className="spinner"></span>
-                ) : (
-                  <>Submit</>
-                )}
-              </button>
-            </form>
+            
+            {matches.length > 0 ? (
+              <ul className="matches-list">
+                {matches.map((match) => {
+                  const homeTeamCode = getTeamCode(match.homeTeam);
+                  const awayTeamCode = getTeamCode(match.awayTeam);
+                  const gradientClass = `${homeTeamCode}-gradient`;
+                  const hasPrediction = predictions.some(p => p.matchNo === match.matchNo);
+                  
+                  return (
+                    <li 
+                      key={match.matchNo} 
+                      className={`match-item ${gradientClass} ${hasPrediction ? 'has-prediction' : ''}`}
+                    >
+                      <div className="match-header">
+                        <div className="match-number">
+                          Match #{match.matchNo}
+                        </div>
+                        {hasPrediction && (
+                          <div className="prediction-badge">
+                            Prediction Added
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="match-teams">
+                        <div className="team-logo-badge">
+                          <Image 
+                            src={`/images/teams/${homeTeamCode}.png`} 
+                            alt={match.homeTeam}
+                            width={60}
+                            height={60}
+                            className="match-team-logo"
+                          />
+                          <span 
+                            className={`home-team team-${homeTeamCode}`}
+                            style={{
+                              color: getTeamColor(homeTeamCode)
+                            }}
+                          >
+                            {match.homeTeam}
+                          </span>
+                        </div>
+                        <span className="vs">vs</span>
+                        <div className="team-logo-badge">
+                          <Image 
+                            src={`/images/teams/${awayTeamCode}.png`} 
+                            alt={match.awayTeam}
+                            width={60}
+                            height={60}
+                            className="match-team-logo"
+                          />
+                          <span 
+                            className={`away-team team-${awayTeamCode}`}
+                            style={{
+                              color: getTeamColor(awayTeamCode)
+                            }}
+                          >
+                            {match.awayTeam}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {hasPrediction && (
+                        <div className="saved-prediction">
+                          <strong>Your prediction:</strong> {getPredictionForMatch(match.matchNo)}
+                        </div>
+                      )}
+                      
+                      <div className="match-info">
+                        <div className="match-date-container">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="date-icon" viewBox="0 0 16 16">
+                            <path d="M4.684 11.523v-2.3h2.261v-.61H4.684V6.801h2.464v-.61H4v5.332h.684zm3.296 0h.676V8.98c0-.554.227-1.007.953-1.007.125 0 .258.004.329.015v-.613a1.806 1.806 0 0 0-.254-.02c-.582 0-.891.32-1.012.567h-.02v-.504H7.98v4.105zm2.805-5.093c0 .238.192.425.43.425a.428.428 0 1 0 0-.855.426.426 0 0 0-.43.43zm.094 5.093h.672V7.418h-.672v4.105z"/>
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                          </svg>
+                          <span>{match.date} {match.time && `• ${match.time}`}</span>
+                        </div>
+                        <div className="match-venue">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="venue-icon" viewBox="0 0 16 16">
+                            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                          </svg>
+                          <span>{match.venue}</span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">
+                  <Image 
+                    src="/images/teams/ipl.png" 
+                    width={100}
+                    height={100}
+                    alt="IPL Logo"
+                    className="empty-state-logo"
+                  />
+                </div>
+                <p>No matches available.</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="matches-tab">
@@ -280,26 +345,6 @@ export default function IPLFantasyTracker() {
                           </span>
                         </div>
                       </div>
-                      
-                      {selectedMatch === match.matchNo && (
-                        <div className="prediction-form">
-                          <h4>Add Your Prediction</h4>
-                          <input
-                            type="text"
-                            value={currentPrediction}
-                            onChange={(e) => setCurrentPrediction(e.target.value)}
-                            placeholder="Enter your match prediction..."
-                            className="prediction-input"
-                          />
-                          <button 
-                            onClick={() => savePrediction(match.matchNo)}
-                            className="save-button"
-                            disabled={!currentPrediction.trim()}
-                          >
-                            Save Prediction
-                          </button>
-                        </div>
-                      )}
                       
                       {hasPrediction && !selectedMatch && (
                         <div className="saved-prediction">
