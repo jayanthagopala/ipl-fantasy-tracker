@@ -92,6 +92,28 @@ const FANTASY_USERS: FantasyUser[] = [
   { id: 9, team_name: "Devilish 11" }
 ];
 
+// Define the coin rewards based on rank (as per the table)
+const RANK_COINS = {
+  1: 50,
+  2: 20,
+  3: 5,
+  4: 0,
+  5: -5,
+  6: -10,
+  7: -15,
+  8: -20,
+  9: -25
+};
+
+// Function to get coins based on rank
+function getCoinsForRank(rank: number): number {
+  if (rank >= 1 && rank <= 9) {
+    return RANK_COINS[rank as keyof typeof RANK_COINS];
+  }
+  // If there are more than 9 players, anyone below rank 9 gets the same as rank 9
+  return RANK_COINS[9];
+}
+
 export default function IPLFantasyTracker() {
   const [notes, setNotes] = useState<Array<Schema["Todo"]["type"]>>([]);
   const [activeTab, setActiveTab] = useState("read");
@@ -718,7 +740,7 @@ export default function IPLFantasyTracker() {
   
   function calculateLeaderboard() {
     // Calculate total points for each user from the current fantasy points data
-    const userTotals: { userId: number; team_name: string; totalPoints: number; matchesPlayed: number; highestScore: number; averageScore: number; lastMatchPoints: number; position_change: number; }[] = [];
+    const userTotals: { userId: number; team_name: string; totalPoints: number; totalCoins: number; matchesPlayed: number; highestScore: number; averageScore: number; lastMatchPoints: number; position_change: number; }[] = [];
     
     // First try to use the userStats if available (which has pre-calculated values)
     if (userStats.length > 0) {
@@ -726,6 +748,7 @@ export default function IPLFantasyTracker() {
         userId: user.id,
         team_name: user.team_name,
         totalPoints: user.total_points || 0,
+        totalCoins: calculateTotalCoinsForUser(user.id),
         matchesPlayed: user.matches_played || 0,
         highestScore: user.highest_score || 0,
         averageScore: user.average_score || 0,
@@ -741,6 +764,7 @@ export default function IPLFantasyTracker() {
       
       // Calculate stats
       const totalPoints = userPoints.reduce((sum, entry) => sum + entry.points, 0);
+      const totalCoins = calculateTotalCoinsForUser(user.id);
       const matchesPlayed = userPoints.length;
       const highestScore = userPoints.length > 0 ? Math.max(...userPoints.map(p => p.points)) : 0;
       const averageScore = matchesPlayed > 0 ? totalPoints / matchesPlayed : 0;
@@ -753,6 +777,7 @@ export default function IPLFantasyTracker() {
         userId: user.id,
         team_name: user.team_name,
         totalPoints,
+        totalCoins,
         matchesPlayed,
         highestScore,
         averageScore,
@@ -763,6 +788,34 @@ export default function IPLFantasyTracker() {
     
     // Sort by total points (descending)
     return userTotals.sort((a, b) => b.totalPoints - a.totalPoints);
+  }
+  
+  // Calculate total coins earned by a user across all matches
+  function calculateTotalCoinsForUser(userId: number): number {
+    let totalCoins = 0;
+    
+    // Get unique match numbers
+    const matchNumbers = Array.from(new Set(fantasyPoints.map(p => p.matchNo)));
+    
+    // For each match, calculate the rank and corresponding coins
+    matchNumbers.forEach(matchNo => {
+      // Get all points for this match
+      const matchPoints = fantasyPoints.filter(p => p.matchNo === matchNo);
+      
+      // Sort by points to determine ranks
+      const sortedUsers = [...matchPoints].sort((a, b) => b.points - a.points);
+      
+      // Find this user's entry
+      const userEntry = sortedUsers.findIndex(entry => entry.userId === userId);
+      
+      // If the user participated in this match
+      if (userEntry !== -1) {
+        // Add coins based on rank (add 1 to index to get rank)
+        totalCoins += getCoinsForRank(userEntry + 1);
+      }
+    });
+    
+    return totalCoins;
   }
   
   // Get user's position changes based on stored data
@@ -989,20 +1042,12 @@ export default function IPLFantasyTracker() {
                   <div className="rank-header">Rank</div>
                   <div className="team-header">Team</div>
                   <div className="points-header">Points</div>
+                  <div className="coins-header">Coins</div>
                 </div>
                 <ul className="leaderboard-list">
                   {calculateLeaderboard().map((entry, index) => {
                     const position = index + 1;
                     const positionChange = getPositionChange(entry.userId);
-                    
-                    // Calculate performance percentage for bar visualization
-                    const topScore = calculateLeaderboard()[0]?.totalPoints || 0;
-                    const performancePercentage = topScore > 0 ? (entry.totalPoints / topScore) * 100 : 0;
-                    
-                    // Find user's highest score match
-                    const highestScoreMatch = fantasyPoints
-                      .filter(p => p.userId === entry.userId)
-                      .sort((a, b) => b.points - a.points)[0];
                     
                     const isExpanded = expandedUserId === entry.userId;
                     
@@ -1024,6 +1069,15 @@ export default function IPLFantasyTracker() {
                           <div className="user-team">{entry.team_name}</div>
                         </div>
                         <div className="user-total-points">{entry.totalPoints.toFixed(2)}</div>
+                        <div className="user-total-coins">
+                          <span className={`coin-value ${entry.totalCoins >= 0 ? 'positive' : 'negative'}`}>
+                            <svg className="coin-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="9" fill="#FFD700" stroke="#E6B800" />
+                              <circle cx="12" cy="12" r="6" fill="#FFEC80" stroke="none" />
+                            </svg>
+                            {entry.totalCoins}
+                          </span>
+                        </div>
                         
                         {isExpanded && (
                           <div className="user-stats-expanded">
@@ -1222,6 +1276,8 @@ export default function IPLFantasyTracker() {
                                 const { user, points } = item;
                                 // Determine rank (index + 1 since array is already sorted)
                                 const userRank = index + 1;
+                                // Get coins based on rank
+                                const coinsEarned = getCoinsForRank(userRank);
                                 
                                 // Determine if user is in top 3
                                 let medalElement = null;
@@ -1239,7 +1295,16 @@ export default function IPLFantasyTracker() {
                                       {medalElement}
                                       {user.team_name}
                                     </span>
-                                    <span className="user-points" data-points={points}>{points}</span>
+                                    <div className="points-coin-container">
+                                      <span className="user-points" data-points={points}>{points}</span>
+                                      <span className={`user-coins ${coinsEarned >= 0 ? 'positive' : 'negative'}`}>
+                                        <svg className="coin-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                          <circle cx="12" cy="12" r="9" fill="#FFD700" stroke="#E6B800" />
+                                          <circle cx="12" cy="12" r="6" fill="#FFEC80" stroke="none" />
+                                        </svg>
+                                        {coinsEarned >= 0 ? '+' : ''}{coinsEarned}
+                                      </span>
+                                    </div>
                                   </div>
                                 );
                               })
