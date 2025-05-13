@@ -12,6 +12,48 @@ const schema = a.schema({
       content: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
+    
+  FantasyUser: a
+    .model({
+      team_name: a.string().required(),
+      user_id: a.integer().required(),
+      total_points: a.float().default(0), // Track total points for easy leaderboard access
+      matches_played: a.integer().default(0), // Track number of matches participated in
+      highest_score: a.float().default(0), // Track user's highest score in any match
+      average_score: a.float().default(0), // Track average score across matches
+      last_match_points: a.float().default(0), // Points from most recent match
+      last_match_no: a.integer().default(0), // Most recent match number
+      position_change: a.integer().default(0), // Track position changes in leaderboard
+      last_position: a.integer().default(0), // Previous position in leaderboard
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+    
+  FantasyPoint: a
+    .model({
+      matchNo: a.integer().required(),
+      userId: a.integer().required(),
+      points: a.float().required(),
+      // Add composite key to ensure uniqueness for matchNo + userId
+      matchUserIndex: a.string().required(), // Will store as "matchNo:userId"
+      match_date: a.string(), // Store match date for time-based queries
+      team_name: a.string(), // Denormalize team name for easier queries
+      match_details: a.string(), // Store match details (team vs team)
+      relative_rank: a.integer(), // User's rank in this specific match
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+    
+  MatchStat: a
+    .model({
+      matchNo: a.integer().required(),
+      highest_scorer_id: a.integer(), // User with highest score in this match
+      highest_score: a.float().default(0), // Highest score in this match
+      average_score: a.float().default(0), // Average score across all users
+      total_participants: a.integer().default(0), // Number of participants
+      match_date: a.string(), // Match date for time-based queries
+      match_details: a.string(), // Match details (team vs team)
+      match_status: a.string(), // completed, in-progress, upcoming
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

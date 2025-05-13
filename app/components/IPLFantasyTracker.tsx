@@ -2,10 +2,36 @@
 
 import { useState, useEffect } from "react";
 import { generateClient } from "aws-amplify/data";
+import { Amplify } from 'aws-amplify';
 import type { Schema } from "@/amplify/data/resource";
 import iplSchedule from "./ipl-schedule-json.json";
 import Image from 'next/image';
 import './IPLMatches.css';
+
+// Define a type for our client
+type DataClient = ReturnType<typeof generateClient<Schema>>;
+
+// Initialize the client with proper error handling
+let amplifyClient: DataClient | null = null;
+
+try {
+  // Try to load the configuration from a relative path
+  const localConfig = require('../../amplify_outputs.json');
+  Amplify.configure(localConfig);
+  amplifyClient = generateClient<Schema>();
+  console.log("Amplify client initialized successfully");
+} catch (error) {
+  console.warn("Failed to initialize Amplify client:", error);
+  amplifyClient = null;
+}
+
+// Safe client accessor function that throws a consistent error if client is null
+function getClient(): DataClient {
+  if (!amplifyClient) {
+    throw new Error("Amplify client not initialized");
+  }
+  return amplifyClient;
+}
 
 interface Match {
   matchNo: number;
@@ -25,12 +51,33 @@ interface MatchPrediction {
 interface FantasyUser {
   id: number;
   team_name: string;
+  total_points?: number;
+  matches_played?: number;
+  highest_score?: number;
+  average_score?: number;
+  last_match_points?: number;
+  position_change?: number;
 }
 
 interface FantasyPoints {
   matchNo: number;
   userId: number;
   points: number;
+  match_date?: string;
+  team_name?: string;
+  match_details?: string;
+  relative_rank?: number;
+}
+
+interface MatchStat {
+  matchNo: number;
+  highest_scorer_id?: number;
+  highest_score?: number;
+  average_score?: number;
+  total_participants?: number;
+  match_date?: string;
+  match_details?: string;
+  match_status?: string;
 }
 
 const FANTASY_USERS: FantasyUser[] = [
@@ -45,8 +92,6 @@ const FANTASY_USERS: FantasyUser[] = [
   { id: 9, team_name: "Devilish 11" }
 ];
 
-const client = generateClient<Schema>();
-
 export default function IPLFantasyTracker() {
   const [notes, setNotes] = useState<Array<Schema["Todo"]["type"]>>([]);
   const [activeTab, setActiveTab] = useState("read");
@@ -60,9 +105,20 @@ export default function IPLFantasyTracker() {
   const [userPoints, setUserPoints] = useState<{[userId: number]: string}>({});
   const [jsonPointsInput, setJsonPointsInput] = useState<string>("");
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isLoadingPoints, setIsLoadingPoints] = useState<boolean>(true);
+  const [isSavingPoints, setIsSavingPoints] = useState<boolean>(false);
+  const [matchStats, setMatchStats] = useState<MatchStat[]>([]);
+  const [userStats, setUserStats] = useState<FantasyUser[]>([]);
+  const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    listNotes();
+    try {
+      listNotes();
+    } catch (error) {
+      console.warn("Error listing notes:", error);
+    }
+    
     if (iplSchedule && iplSchedule.matches) {
       setMatches(iplSchedule.matches);
     }
@@ -73,17 +129,164 @@ export default function IPLFantasyTracker() {
       setPredictions(JSON.parse(savedPredictions));
     }
     
-    // Load saved fantasy points from localStorage
-    const savedFantasyPoints = localStorage.getItem('iplFantasyPoints');
-    if (savedFantasyPoints) {
-      setFantasyPoints(JSON.parse(savedFantasyPoints));
+    // Load fantasy points and stats from DynamoDB or localStorage
+    try {
+      const hasClient = (() => {
+        try {
+          return !!getClient() && !!getClient().models;
+        } catch (error) {
+          return false;
+        }
+      })();
+      
+      if (!hasClient) {
+        console.warn("Amplify client not initialized, using local data only");
+        loadLocalFantasyData();
+      } else {
+        loadFantasyData();
+      }
+    } catch (error) {
+      console.error("Error initializing data:", error);
+      loadLocalFantasyData();
     }
   }, []);
+  
+  async function loadFantasyData() {
+    setIsLoadingPoints(true);
+    setIsLoadingStats(true);
+    
+    try {
+      // Check if client.models is initialized
+      if (!getClient() || !getClient().models) {
+        console.error("Amplify client or models not initialized properly");
+        throw new Error("Data client not initialized properly");
+      }
+      
+      // Fetch all fantasy points from DynamoDB
+      const { data: pointsData } = await getClient().models.FantasyPoint.list();
+      
+      // Convert to our local data format
+      const points: FantasyPoints[] = pointsData.map(point => ({
+        matchNo: point.matchNo,
+        userId: point.userId,
+        points: point.points,
+        match_date: point.match_date || undefined,
+        team_name: point.team_name || undefined,
+        match_details: point.match_details || undefined,
+        relative_rank: point.relative_rank || undefined
+      }));
+      
+      setFantasyPoints(points);
+      
+      // Fetch user stats from DynamoDB
+      const { data: usersData } = await getClient().models.FantasyUser.list();
+      
+      // If no user data exists yet, initialize from our local FANTASY_USERS
+      if (usersData.length === 0) {
+        await initializeFantasyUsers();
+      } else {
+        // Map DynamoDB users to our local format
+        const users: FantasyUser[] = usersData.map(user => ({
+          id: user.user_id,
+          team_name: user.team_name,
+          total_points: user.total_points || undefined,
+          matches_played: user.matches_played || undefined,
+          highest_score: user.highest_score || undefined,
+          average_score: user.average_score || undefined,
+          last_match_points: user.last_match_points || undefined,
+          position_change: user.position_change || undefined
+        }));
+        
+        setUserStats(users);
+      }
+      
+      // Fetch match stats from DynamoDB
+      const { data: matchStatsData } = await getClient().models.MatchStat.list();
+      
+      const matchStats: MatchStat[] = matchStatsData.map(stat => ({
+        matchNo: stat.matchNo,
+        highest_scorer_id: stat.highest_scorer_id || undefined,
+        highest_score: stat.highest_score || undefined,
+        average_score: stat.average_score || undefined,
+        total_participants: stat.total_participants || undefined,
+        match_date: stat.match_date || undefined,
+        match_details: stat.match_details || undefined,
+        match_status: stat.match_status || undefined
+      }));
+      
+      setMatchStats(matchStats);
+      
+      // Also store in localStorage as backup
+      localStorage.setItem('iplFantasyPoints', JSON.stringify(points));
+      localStorage.setItem('iplFantasyUsers', JSON.stringify(userStats));
+      localStorage.setItem('iplMatchStats', JSON.stringify(matchStats));
+    } catch (error) {
+      console.error("Error loading fantasy data:", error);
+      
+      // Fall back to localStorage if DynamoDB fails
+      const savedFantasyPoints = localStorage.getItem('iplFantasyPoints');
+      const savedFantasyUsers = localStorage.getItem('iplFantasyUsers');
+      const savedMatchStats = localStorage.getItem('iplMatchStats');
+      
+      if (savedFantasyPoints) {
+        setFantasyPoints(JSON.parse(savedFantasyPoints));
+      }
+      
+      if (savedFantasyUsers) {
+        setUserStats(JSON.parse(savedFantasyUsers));
+      }
+      
+      if (savedMatchStats) {
+        setMatchStats(JSON.parse(savedMatchStats));
+      }
+    } finally {
+      setIsLoadingPoints(false);
+      setIsLoadingStats(false);
+    }
+  }
+  
+  async function initializeFantasyUsers() {
+    try {
+      // Check if client is available
+      if (!getClient() || !getClient().models) {
+        console.error("Amplify client not initialized");
+        throw new Error("Data client not initialized properly");
+      }
+      
+      const users: FantasyUser[] = [];
+      
+      // Create each fantasy user in DynamoDB
+      for (const user of FANTASY_USERS) {
+        await getClient().models.FantasyUser.create({
+          team_name: user.team_name,
+          user_id: user.id,
+          total_points: 0,
+          matches_played: 0,
+          highest_score: 0,
+          average_score: 0,
+          last_match_points: 0,
+          last_match_no: 0,
+          position_change: 0,
+          last_position: 0
+        });
+        
+        users.push(user);
+      }
+      
+      setUserStats(users);
+    } catch (error) {
+      console.error("Error initializing fantasy users:", error);
+    }
+  }
 
   function listNotes() {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setNotes([...data.items]),
-    });
+    try {
+      getClient().models.Todo.observeQuery().subscribe({
+        next: (data) => setNotes([...data.items]),
+      });
+    } catch (error) {
+      console.warn("Could not load notes:", error);
+    }
   }
 
   async function createNote(e: React.FormEvent) {
@@ -93,7 +296,7 @@ export default function IPLFantasyTracker() {
     setIsSubmitting(true);
     
     try {
-      await client.models.Todo.create({
+      await getClient().models.Todo.create({
         content: noteContent,
       });
       
@@ -231,25 +434,261 @@ export default function IPLFantasyTracker() {
     }
   }
   
-  function saveFantasyPoints(matchNo: number) {
+  async function saveFantasyPoints(matchNo: number) {
     const validPoints = validateAndParseJson();
     
     if (validPoints && validPoints.length > 0) {
+      setIsSavingPoints(true);
+      
+      try {
+        // Check if client.models is initialized
+        const hasClient = (() => {
+          try {
+            return !!getClient() && !!getClient().models;
+          } catch (error) {
+            return false;
+          }
+        })();
+        
+        if (!hasClient) {
+          console.warn("Amplify client not initialized, saving to localStorage only");
+          saveFantasyPointsLocally(matchNo, validPoints);
+          return;
+        }
+        
+        // Find the match details
+        const match = matches.find(m => m.matchNo === matchNo);
+        if (!match) {
+          throw new Error(`Match #${matchNo} not found`);
+        }
+        
+        const matchDate = match.date;
+        const matchDetails = `${match.homeTeam} vs ${match.awayTeam}`;
+        
+        // First, delete existing points for this match from DynamoDB
+        const { data: existingPoints } = await getClient().models.FantasyPoint.list({
+          filter: {
+            matchNo: { eq: matchNo }
+          }
+        });
+        
+        for (const point of existingPoints) {
+          await getClient().models.FantasyPoint.delete({ id: point.id });
+        }
+        
+        // Calculate additional stats for this match
+        const totalPoints = validPoints.reduce((sum, point) => sum + point.points, 0);
+        const averageScore = validPoints.length > 0 ? totalPoints / validPoints.length : 0;
+        
+        // Find highest scorer
+        const sortedPoints = [...validPoints].sort((a, b) => b.points - a.points);
+        const highestScore = sortedPoints[0]?.points || 0;
+        const highestScorerId = sortedPoints[0]?.userId || 0;
+        
+        // Assign relative ranks
+        validPoints.forEach((point, i) => {
+          point.relative_rank = sortedPoints.findIndex(p => p.userId === point.userId) + 1;
+        });
+        
+        // Create or update match stats
+        const existingMatchStat = matchStats.find(m => m.matchNo === matchNo);
+        
+        if (existingMatchStat) {
+          // Update existing match stat
+          await getClient().models.MatchStat.update({
+            id: (await getClient().models.MatchStat.list({
+              filter: { matchNo: { eq: matchNo } }
+            })).data[0].id,
+            highest_scorer_id: highestScorerId,
+            highest_score: highestScore,
+            average_score: averageScore,
+            total_participants: validPoints.length,
+            match_date: matchDate,
+            match_details: matchDetails,
+            match_status: "completed"
+          });
+        } else {
+          // Create new match stat
+          await getClient().models.MatchStat.create({
+            matchNo,
+            highest_scorer_id: highestScorerId,
+            highest_score: highestScore,
+            average_score: averageScore,
+            total_participants: validPoints.length,
+            match_date: matchDate,
+            match_details: matchDetails,
+            match_status: "completed"
+          });
+        }
+        
+        // Calculate previous leaderboard positions
+        const previousLeaderboard = calculateLeaderboard();
+        const previousPositions: {[userId: number]: number} = {};
+        previousLeaderboard.forEach((entry, index) => {
+          previousPositions[entry.userId] = index + 1;
+        });
+        
+        // Then create new points in DynamoDB with enhanced data
+        for (const point of validPoints) {
+          const user = FANTASY_USERS.find(u => u.id === point.userId);
+          if (!user) continue;
+          
+          await getClient().models.FantasyPoint.create({
+            matchNo: point.matchNo,
+            userId: point.userId,
+            points: point.points,
+            matchUserIndex: `${point.matchNo}:${point.userId}`,
+            match_date: matchDate,
+            team_name: user.team_name,
+            match_details: matchDetails,
+            relative_rank: point.relative_rank
+          });
+        }
+        
+        // Update user stats
+        for (const point of validPoints) {
+          const user = FANTASY_USERS.find(u => u.id === point.userId);
+          if (!user) continue;
+          
+          // Get existing user data
+          const { data: userData } = await getClient().models.FantasyUser.list({
+            filter: { user_id: { eq: point.userId } }
+          });
+          
+          if (userData.length > 0) {
+            const existingUser = userData[0];
+            const userPointsList = [...fantasyPoints, ...validPoints].filter(p => p.userId === point.userId);
+            const totalPoints = userPointsList.reduce((sum, p) => sum + p.points, 0);
+            const matchesPlayed = userPointsList.length;
+            const averageScore = matchesPlayed > 0 ? totalPoints / matchesPlayed : 0;
+            const highestScore = Math.max(...userPointsList.map(p => p.points), 0);
+            
+            // Calculate new leaderboard to determine position change
+            const newPoints = [...fantasyPoints.filter(p => p.matchNo !== matchNo), ...validPoints];
+            
+            // Temporarily update fantasy points to calculate new positions
+            const tempFantasyPoints = fantasyPoints;
+            setFantasyPoints(newPoints);
+            const newLeaderboard = calculateLeaderboard();
+            setFantasyPoints(tempFantasyPoints);
+            
+            const newPosition = newLeaderboard.findIndex(entry => entry.userId === point.userId) + 1;
+            const oldPosition = previousPositions[point.userId] || 0;
+            const positionChange = oldPosition === 0 ? 0 : oldPosition - newPosition;
+            
+            await getClient().models.FantasyUser.update({
+              id: existingUser.id,
+              total_points: totalPoints,
+              matches_played: matchesPlayed,
+              highest_score: highestScore,
+              average_score: averageScore,
+              last_match_points: point.points,
+              last_match_no: matchNo,
+              position_change: positionChange,
+              last_position: oldPosition
+            });
+          }
+        }
+        
+        // Remove existing points from local state
+        const filteredPoints = fantasyPoints.filter(p => p.matchNo !== matchNo);
+        
+        // Add new points to local state
+        const newFantasyPoints = [...filteredPoints, ...validPoints];
+        
+        // Update local state
+        setFantasyPoints(newFantasyPoints);
+        
+        // Reload all fantasy data to ensure everything is in sync
+        await loadFantasyData();
+        
+        // Reset selected match
+        setSelectedAdminMatch(null);
+        setUserPoints({});
+        setJsonPointsInput("");
+        setJsonError(null);
+      } catch (error) {
+        console.error("Error saving fantasy points to DynamoDB:", error);
+        setJsonError("Failed to save points to database. Falling back to local storage.");
+        
+        // Fallback to local storage
+        saveFantasyPointsLocally(matchNo, validPoints);
+      } finally {
+        setIsSavingPoints(false);
+      }
+    }
+  }
+  
+  // Fallback function to save data to localStorage only
+  function saveFantasyPointsLocally(matchNo: number, validPoints: FantasyPoints[]) {
+    try {
+      // Find the match details
+      const match = matches.find(m => m.matchNo === matchNo);
+      if (!match) {
+        throw new Error(`Match #${matchNo} not found`);
+      }
+      
+      const matchDate = match.date;
+      const matchDetails = `${match.homeTeam} vs ${match.awayTeam}`;
+      
+      // Add match details to points
+      const enrichedPoints = validPoints.map(point => {
+        const user = FANTASY_USERS.find(u => u.id === point.userId);
+        return {
+          ...point,
+          match_date: matchDate,
+          match_details: matchDetails,
+          team_name: user?.team_name
+        };
+      });
+      
       // Remove existing points for this match
       const filteredPoints = fantasyPoints.filter(p => p.matchNo !== matchNo);
       
       // Add new points
-      const newFantasyPoints = [...filteredPoints, ...validPoints];
-      
-      // Save to state and localStorage
+      const newFantasyPoints = [...filteredPoints, ...enrichedPoints];
       setFantasyPoints(newFantasyPoints);
+      
+      // Calculate user stats
+      const updatedUserStats = [...userStats];
+      
+      enrichedPoints.forEach(point => {
+        const userIndex = updatedUserStats.findIndex(u => u.id === point.userId);
+        if (userIndex >= 0) {
+          const user = updatedUserStats[userIndex];
+          const userPointsList = newFantasyPoints.filter(p => p.userId === point.userId);
+          const totalPoints = userPointsList.reduce((sum, p) => sum + p.points, 0);
+          const matchesPlayed = userPointsList.length;
+          const averageScore = matchesPlayed > 0 ? totalPoints / matchesPlayed : 0;
+          const highestScore = Math.max(...userPointsList.map(p => p.points), 0);
+          
+          updatedUserStats[userIndex] = {
+            ...user,
+            total_points: totalPoints,
+            matches_played: matchesPlayed,
+            highest_score: highestScore,
+            average_score: averageScore,
+            last_match_points: point.points
+          };
+        }
+      });
+      
+      setUserStats(updatedUserStats);
+      
+      // Save to localStorage
       localStorage.setItem('iplFantasyPoints', JSON.stringify(newFantasyPoints));
+      localStorage.setItem('iplFantasyUsers', JSON.stringify(updatedUserStats));
       
       // Reset selected match
       setSelectedAdminMatch(null);
       setUserPoints({});
       setJsonPointsInput("");
       setJsonError(null);
+    } catch (error) {
+      console.error("Error saving fantasy points locally:", error);
+      setJsonError("Failed to save points locally. Please try again.");
+    } finally {
+      setIsSavingPoints(false);
     }
   }
   
@@ -278,20 +717,47 @@ export default function IPLFantasyTracker() {
   }
   
   function calculateLeaderboard() {
-    // Calculate total points for each user
-    const userTotals: { userId: number; team_name: string; totalPoints: number; }[] = [];
+    // Calculate total points for each user from the current fantasy points data
+    const userTotals: { userId: number; team_name: string; totalPoints: number; matchesPlayed: number; highestScore: number; averageScore: number; lastMatchPoints: number; position_change: number; }[] = [];
     
+    // First try to use the userStats if available (which has pre-calculated values)
+    if (userStats.length > 0) {
+      return userStats.map(user => ({
+        userId: user.id,
+        team_name: user.team_name,
+        totalPoints: user.total_points || 0,
+        matchesPlayed: user.matches_played || 0,
+        highestScore: user.highest_score || 0,
+        averageScore: user.average_score || 0,
+        lastMatchPoints: user.last_match_points || 0,
+        position_change: user.position_change || 0
+      })).sort((a, b) => b.totalPoints - a.totalPoints);
+    }
+    
+    // If no user stats available, calculate from fantasy points
     FANTASY_USERS.forEach(user => {
       // Get all points for this user
       const userPoints = fantasyPoints.filter(p => p.userId === user.id);
       
-      // Calculate total
+      // Calculate stats
       const totalPoints = userPoints.reduce((sum, entry) => sum + entry.points, 0);
+      const matchesPlayed = userPoints.length;
+      const highestScore = userPoints.length > 0 ? Math.max(...userPoints.map(p => p.points)) : 0;
+      const averageScore = matchesPlayed > 0 ? totalPoints / matchesPlayed : 0;
+      
+      // Get most recent match for this user
+      const sortedByMatchNo = [...userPoints].sort((a, b) => b.matchNo - a.matchNo);
+      const lastMatchPoints = sortedByMatchNo.length > 0 ? sortedByMatchNo[0].points : 0;
       
       userTotals.push({
         userId: user.id,
         team_name: user.team_name,
-        totalPoints
+        totalPoints,
+        matchesPlayed,
+        highestScore,
+        averageScore,
+        lastMatchPoints,
+        position_change: 0 // Need history to calculate position change
       });
     });
     
@@ -299,19 +765,173 @@ export default function IPLFantasyTracker() {
     return userTotals.sort((a, b) => b.totalPoints - a.totalPoints);
   }
   
-  // Count completed matches
+  // Get user's position changes based on stored data
+  function getPositionChange(userId: number): number {
+    const user = userStats.find(u => u.id === userId);
+    return user?.position_change || 0;
+  }
+
+  // Get completed matches count
   function getCompletedMatchesCount(): number {
     return matches.filter(match => 
       fantasyPoints.some(p => p.matchNo === match.matchNo)
     ).length;
   }
-  
-  // Get user's position changes based on points
-  function getPositionChange(currentIndex: number, userId: number): number {
-    // This is simplified - in a real app you'd track position history
-    // For demo purposes, we'll return a random change
-    const changes = [-2, -1, 0, 1, 2];
-    return changes[Math.floor(Math.random() * changes.length)];
+
+  // Get highest score across all matches
+  function getHighestMatchScore(): number {
+    if (userStats.length > 0) {
+      const highest = userStats.reduce((max, user) => Math.max(max, user.highest_score || 0), 0);
+      return highest;
+    }
+    
+    if (fantasyPoints.length > 0) {
+      return Math.max(...fantasyPoints.map(p => p.points));
+    }
+    
+    return 0;
+  }
+
+  // Render user's match history chart
+  function renderUserMatchHistory(userId: number) {
+    const userPoints = fantasyPoints
+      .filter(p => p.userId === userId)
+      .sort((a, b) => a.matchNo - b.matchNo);
+    
+    if (userPoints.length === 0) return null;
+    
+    const maxScore = Math.max(...userPoints.map(p => p.points));
+    
+    return (
+      <div className="points-chart">
+        {userPoints.map(point => {
+          // Get match info
+          const matchInfo = matches.find(m => m.matchNo === point.matchNo);
+          
+          // Calculate height as percentage of user's highest score
+          const heightPercentage = maxScore > 0 ? 
+            (point.points / maxScore) * 100 : 0;
+            
+          return (
+            <div 
+              key={point.matchNo}
+              className="chart-bar"
+              style={{ 
+                height: `${heightPercentage}%`,
+                background: getTeamColor(getTeamCode(matchInfo?.homeTeam || ''))
+              }}
+              data-points={point.points.toFixed(1)}
+              data-match={`Match #${point.matchNo}`}
+            ></div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Render user's recent matches
+  function renderUserRecentMatches(userId: number) {
+    const userMatches = fantasyPoints
+      .filter(p => p.userId === userId)
+      .sort((a, b) => b.matchNo - a.matchNo)
+      .slice(0, 5); // Get 5 most recent matches
+    
+    if (userMatches.length === 0) return null;
+    
+    return (
+      <div className="match-performance">
+        <h4 className="match-title">Recent Matches</h4>
+        {userMatches.map(match => {
+          // Find match details
+          const matchInfo = matches.find(m => m.matchNo === match.matchNo);
+          
+          // Calculate performance relative to highest score in this match
+          const matchHighestScore = fantasyPoints
+            .filter(p => p.matchNo === match.matchNo)
+            .reduce((max, p) => Math.max(max, p.points), 0);
+          
+          const matchPerformance = matchHighestScore > 0 ? 
+            (match.points / matchHighestScore) * 100 : 0;
+          
+          return (
+            <div key={match.matchNo} className="match-points">
+              <div className="match-details">
+                <div>Match #{match.matchNo}</div>
+                <div className="match-teams">
+                  {matchInfo ? `${getTeamCode(matchInfo.homeTeam).toUpperCase()} vs ${getTeamCode(matchInfo.awayTeam).toUpperCase()}` : ''}
+                </div>
+              </div>
+              <div className="match-points-value">
+                {match.points.toFixed(1)}
+                {match.relative_rank && (
+                  <span className="match-rank">
+                    {' '}#{match.relative_rank}
+                  </span>
+                )}
+              </div>
+              <div className="match-bar">
+                <div 
+                  className="match-bar-fill"
+                  style={{ 
+                    width: `${matchPerformance}%`, 
+                    background: `linear-gradient(to right, ${getTeamColor(getTeamCode(matchInfo?.homeTeam || ''))}, ${getTeamColor(getTeamCode(matchInfo?.awayTeam || ''))})`
+                  }}
+                ></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Fallback function to load data from localStorage only
+  function loadLocalFantasyData() {
+    setIsLoadingPoints(true);
+    
+    try {
+      // Load from localStorage
+      const savedFantasyPoints = localStorage.getItem('iplFantasyPoints');
+      const savedFantasyUsers = localStorage.getItem('iplFantasyUsers');
+      const savedMatchStats = localStorage.getItem('iplMatchStats');
+      
+      if (savedFantasyPoints) {
+        setFantasyPoints(JSON.parse(savedFantasyPoints));
+      } else {
+        // Initialize with empty data
+        setFantasyPoints([]);
+      }
+      
+      if (savedFantasyUsers) {
+        setUserStats(JSON.parse(savedFantasyUsers));
+      } else {
+        // Initialize with default users
+        setUserStats(FANTASY_USERS.map(user => ({
+          ...user,
+          total_points: 0,
+          matches_played: 0,
+          highest_score: 0,
+          average_score: 0,
+          last_match_points: 0,
+          position_change: 0
+        })));
+      }
+      
+      if (savedMatchStats) {
+        setMatchStats(JSON.parse(savedMatchStats));
+      } else {
+        setMatchStats([]);
+      }
+    } catch (error) {
+      console.error("Error loading local fantasy data:", error);
+      // Initialize with empty data
+      setFantasyPoints([]);
+      setUserStats([]);
+      setMatchStats([]);
+    } finally {
+      setIsLoadingPoints(false);
+      setIsLoadingStats(false);
+    }
   }
 
   return (
@@ -358,22 +978,12 @@ export default function IPLFantasyTracker() {
               Fantasy Leaderboard
             </h2>
             
-            <div className="leaderboard-stats">
-              <div className="stat-item">
-                <div className="stat-value">{getCompletedMatchesCount()}</div>
-                <div className="stat-label">Matches Completed</div>
+            {isLoadingPoints ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading fantasy points...</p>
               </div>
-              <div className="stat-item">
-                <div className="stat-value">{matches.length - getCompletedMatchesCount()}</div>
-                <div className="stat-label">Upcoming Matches</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">{FANTASY_USERS.length}</div>
-                <div className="stat-label">Fantasy Players</div>
-              </div>
-            </div>
-            
-            {fantasyPoints.length > 0 ? (
+            ) : fantasyPoints.length > 0 ? (
               <div className="fantasy-leaderboard">
                 <div className="leaderboard-header">
                   <div className="rank-header">Rank</div>
@@ -383,10 +993,25 @@ export default function IPLFantasyTracker() {
                 <ul className="leaderboard-list">
                   {calculateLeaderboard().map((entry, index) => {
                     const position = index + 1;
-                    const positionChange = getPositionChange(index, entry.userId);
+                    const positionChange = getPositionChange(entry.userId);
+                    
+                    // Calculate performance percentage for bar visualization
+                    const topScore = calculateLeaderboard()[0]?.totalPoints || 0;
+                    const performancePercentage = topScore > 0 ? (entry.totalPoints / topScore) * 100 : 0;
+                    
+                    // Find user's highest score match
+                    const highestScoreMatch = fantasyPoints
+                      .filter(p => p.userId === entry.userId)
+                      .sort((a, b) => b.points - a.points)[0];
+                    
+                    const isExpanded = expandedUserId === entry.userId;
                     
                     return (
-                      <li key={entry.userId} className={`leaderboard-item rank-${position <= 3 ? position : 'other'}`}>
+                      <li 
+                        key={entry.userId} 
+                        className={`leaderboard-item rank-${position <= 3 ? position : 'other'}`}
+                        onClick={() => setExpandedUserId(isExpanded ? null : entry.userId)}
+                      >
                         <div className="user-rank">
                           <span className="rank-number">{position}</span>
                           {positionChange !== 0 && (
@@ -395,8 +1020,32 @@ export default function IPLFantasyTracker() {
                             </span>
                           )}
                         </div>
-                        <div className="user-team">{entry.team_name}</div>
+                        <div className="user-details">
+                          <div className="user-team">{entry.team_name}</div>
+                          {highestScoreMatch && (
+                            <div className="user-highest">
+                              Top: <span className="highest-value">{highestScoreMatch.points.toFixed(1)}</span> pts
+                            </div>
+                          )}
+                          <div className="performance-bar">
+                            <div 
+                              className="performance-bar-fill" 
+                              style={{ width: `${performancePercentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
                         <div className="user-total-points">{entry.totalPoints.toFixed(2)}</div>
+                        
+                        {isExpanded && (
+                          <div className="user-stats-expanded">
+                            {renderUserRecentMatches(entry.userId)}
+                            
+                            <div className="points-breakdown">
+                              <h4 className="points-breakdown-title">Points History</h4>
+                              {renderUserMatchHistory(entry.userId)}
+                            </div>
+                          </div>
+                        )}
                       </li>
                     );
                   })}
@@ -556,8 +1205,13 @@ export default function IPLFantasyTracker() {
                               e.stopPropagation();
                               saveFantasyPoints(match.matchNo);
                             }}
+                            disabled={isSavingPoints}
                           >
-                            Save Points
+                            {isSavingPoints ? (
+                              <span className="button-spinner"></span>
+                            ) : (
+                              "Save Points"
+                            )}
                           </button>
                         </div>
                       )}
@@ -566,18 +1220,41 @@ export default function IPLFantasyTracker() {
                         <div className="fantasy-points-summary">
                           <h4 className="points-summary-title">Recorded Points</h4>
                           <div className="fantasy-points-grid">
-                            {FANTASY_USERS.map(user => {
-                              const points = getPointsForMatch(match.matchNo, user.id);
-                              if (points !== null) {
+                            {FANTASY_USERS
+                              // Map users to their points and filter out those without points
+                              .map(user => ({
+                                user,
+                                points: getPointsForMatch(match.matchNo, user.id)
+                              }))
+                              .filter(item => item.points !== null)
+                              // Sort by points in descending order
+                              .sort((a, b) => (b.points || 0) - (a.points || 0))
+                              .map((item, index) => {
+                                const { user, points } = item;
+                                // Determine rank (index + 1 since array is already sorted)
+                                const userRank = index + 1;
+                                
+                                // Determine if user is in top 3
+                                let medalElement = null;
+                                if (userRank === 1) {
+                                  medalElement = <span className="medal gold-medal">🥇</span>;
+                                } else if (userRank === 2) {
+                                  medalElement = <span className="medal silver-medal">🥈</span>;
+                                } else if (userRank === 3) {
+                                  medalElement = <span className="medal bronze-medal">🥉</span>;
+                                }
+                                
                                 return (
-                                  <div key={user.id} className="user-points-entry">
-                                    <span className="user-name">{user.team_name}</span>
-                                    <span className="user-points">{points}</span>
+                                  <div key={user.id} className={`user-points-entry ${userRank <= 3 ? `rank-${userRank}` : ''}`}>
+                                    <span className="user-name">
+                                      {medalElement}
+                                      {user.team_name}
+                                    </span>
+                                    <span className="user-points" data-points={points}>{points}</span>
                                   </div>
                                 );
-                              }
-                              return null;
-                            })}
+                              })
+                            }
                           </div>
                         </div>
                       )}
