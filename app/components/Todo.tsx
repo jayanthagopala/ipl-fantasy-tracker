@@ -230,151 +230,49 @@ export default function IPLFantasyTracker() {
                     <li 
                       key={match.matchNo} 
                       className={`match-item ${gradientClass} ${hasPrediction ? 'has-prediction' : ''} ${selectedMatch === match.matchNo ? 'selected' : ''}`}
-                      style={{
-                        position: 'relative',
-                        borderRadius: '12px',
-                        padding: '20px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                        backgroundColor: '#ffffff',
-                        overflow: 'hidden',
-                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                        marginBottom: '16px',
-                        border: `1px solid ${hasPrediction ? '#4caf50' : '#eaeaea'}`,
-                        cursor: 'pointer',
-                        background: getGradientStyle(homeTeamCode)
-                      }}
                       onClick={() => handleMatchClick(match.matchNo)}
                     >
-                      <div className="match-header" style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '15px'
-                      }}>
-                        <div className="match-number" style={{
-                          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                          color: '#ffffff',
-                          fontWeight: 700,
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          display: 'inline-block',
-                          fontSize: '0.9rem',
-                          position: 'relative',
-                          zIndex: 1
-                        }}>
+                      <div className="match-header">
+                        <div className="match-number">
                           Match #{match.matchNo}
                         </div>
                         {hasPrediction && (
-                          <div className="prediction-badge" style={{
-                            backgroundColor: '#4caf50',
-                            color: 'white',
-                            padding: '4px 12px',
-                            borderRadius: '20px',
-                            fontSize: '0.8rem',
-                            fontWeight: 500
-                          }}>
+                          <div className="prediction-badge">
                             Prediction Added
                           </div>
                         )}
                       </div>
                       
-                      <div className="match-teams" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '16px',
-                        position: 'relative',
-                        zIndex: 1,
-                        background: 'rgba(255, 255, 255, 0.8)',
-                        padding: '10px',
-                        borderRadius: '8px'
-                      }}>
-                        <div className="team-logo-badge" style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '8px',
-                          width: '45%'
-                        }}>
+                      <div className="match-teams">
+                        <div className="team-logo-badge">
                           <Image 
                             src={`/images/teams/${homeTeamCode}.png`} 
                             alt={match.homeTeam}
                             width={60}
                             height={60}
                             className="match-team-logo"
-                            style={{
-                              backgroundColor: 'white',
-                              borderRadius: '50%',
-                              padding: '4px',
-                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
-                            }}
                           />
                           <span 
                             className={`home-team team-${homeTeamCode}`}
                             style={{
-                              fontWeight: 600,
-                              fontSize: '0.9rem',
-                              textAlign: 'center',
-                              maxWidth: '100%',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
                               color: getTeamColor(homeTeamCode)
                             }}
                           >
                             {match.homeTeam}
                           </span>
                         </div>
-                        <span className="vs" style={{
-                          fontWeight: 700,
-                          fontSize: '1.2rem',
-                          color: '#363636',
-                          position: 'relative',
-                          width: '40px',
-                          height: '40px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                          borderRadius: '50%',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                        }}>vs</span>
-                        <div className="team-logo-badge" style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '8px',
-                          width: '45%'
-                        }}>
+                        <span className="vs">vs</span>
+                        <div className="team-logo-badge">
                           <Image 
                             src={`/images/teams/${awayTeamCode}.png`} 
                             alt={match.awayTeam}
                             width={60}
                             height={60}
                             className="match-team-logo"
-                            style={{
-                              backgroundColor: 'white',
-                              borderRadius: '50%',
-                              padding: '4px',
-                              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
-                            }}
                           />
                           <span 
                             className={`away-team team-${awayTeamCode}`}
                             style={{
-                              fontWeight: 600,
-                              fontSize: '0.9rem',
-                              textAlign: 'center',
-                              maxWidth: '100%',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
                               color: getTeamColor(awayTeamCode)
                             }}
                           >
@@ -384,43 +282,19 @@ export default function IPLFantasyTracker() {
                       </div>
                       
                       {selectedMatch === match.matchNo && (
-                        <div className="prediction-form" style={{
-                          marginTop: '15px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                          padding: '15px',
-                          borderRadius: '8px',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                        }}>
-                          <h4 style={{ marginTop: 0, marginBottom: '10px' }}>Add Your Prediction</h4>
+                        <div className="prediction-form">
+                          <h4>Add Your Prediction</h4>
                           <input
                             type="text"
                             value={currentPrediction}
                             onChange={(e) => setCurrentPrediction(e.target.value)}
                             placeholder="Enter your match prediction..."
                             className="prediction-input"
-                            style={{
-                              width: '100%',
-                              padding: '10px',
-                              borderRadius: '4px',
-                              border: '1px solid #ddd',
-                              marginBottom: '10px',
-                              fontSize: '1rem'
-                            }}
                           />
                           <button 
                             onClick={() => savePrediction(match.matchNo)}
                             className="save-button"
                             disabled={!currentPrediction.trim()}
-                            style={{
-                              backgroundColor: '#4caf50',
-                              color: 'white',
-                              border: 'none',
-                              padding: '10px 20px',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              opacity: currentPrediction.trim() ? 1 : 0.7
-                            }}
                           >
                             Save Prediction
                           </button>
@@ -428,34 +302,20 @@ export default function IPLFantasyTracker() {
                       )}
                       
                       {hasPrediction && !selectedMatch && (
-                        <div className="saved-prediction" style={{
-                          marginTop: '10px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                          padding: '10px',
-                          borderRadius: '8px',
-                          borderLeft: '4px solid #4caf50'
-                        }}>
+                        <div className="saved-prediction">
                           <strong>Your prediction:</strong> {getPredictionForMatch(match.matchNo)}
                         </div>
                       )}
                       
-                      <div className="match-info" style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: selectedMatch === match.matchNo || hasPrediction ? '15px' : '10px',
-                        padding: '10px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                        borderRadius: '8px'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <div className="match-info">
+                        <div className="match-date-container">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="date-icon" viewBox="0 0 16 16">
                             <path d="M4.684 11.523v-2.3h2.261v-.61H4.684V6.801h2.464v-.61H4v5.332h.684zm3.296 0h.676V8.98c0-.554.227-1.007.953-1.007.125 0 .258.004.329.015v-.613a1.806 1.806 0 0 0-.254-.02c-.582 0-.891.32-1.012.567h-.02v-.504H7.98v4.105zm2.805-5.093c0 .238.192.425.43.425a.428.428 0 1 0 0-.855.426.426 0 0 0-.43.43zm.094 5.093h.672V7.418h-.672v4.105z"/>
                             <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
                           </svg>
                           <span>{match.date} {match.time && `• ${match.time}`}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div className="match-venue">
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="venue-icon" viewBox="0 0 16 16">
                             <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
                           </svg>

@@ -5,12 +5,18 @@
   list-style-type: none !important;
   padding: 0 !important;
   margin: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 16px !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  gap: 20px !important;
   overflow-y: auto !important;
-  max-height: 500px !important;
-  padding-right: 10px !important;
+  max-height: 600px !important;
+  padding: 15px 5px !important;
+}
+
+@media (max-width: 768px) {
+  .matches-tab .matches-list {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* Match item styling */
@@ -22,8 +28,9 @@
   background-color: #ffffff !important;
   overflow: hidden !important;
   transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-  margin-bottom: 16px !important;
   border: 1px solid #eaeaea !important;
+  margin: 0 !important; /* Remove bottom margin to fix grid spacing */
+  height: fit-content !important;
 }
 
 .matches-tab .match-item::before {
@@ -136,11 +143,14 @@
   justify-content: space-between !important;
   align-items: center !important;
   background-color: rgba(255, 255, 255, 0.8) !important;
-  padding: 10px 15px !important;
+  padding: 12px 15px !important;
   border-radius: 8px !important;
   position: relative !important;
   z-index: 1 !important;
-  margin-top: 10px !important;
+  margin-top: 15px !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
 .matches-tab .match-date-container, 
@@ -149,11 +159,22 @@
   align-items: center !important;
   gap: 6px !important;
   font-size: 0.9rem !important;
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+}
+
+.matches-tab .match-date-container {
+  color: var(--primary-color) !important;
+}
+
+.matches-tab .match-venue {
+  color: var(--secondary-color) !important;
 }
 
 .matches-tab .date-icon, 
 .matches-tab .venue-icon {
-  color: #555555 !important;
+  color: inherit !important;
 }
 
 /* Team-specific gradients with stronger colors */
@@ -243,6 +264,112 @@
   color: #0189d1 !important;
 }
 
+/* Prediction badge */
+.matches-tab .prediction-badge {
+  background-color: #4caf50 !important;
+  color: white !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  animation: pulseGreen 2s infinite !important;
+}
+
+@keyframes pulseGreen {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(76, 175, 80, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
+
+/* Prediction form */
+.matches-tab .prediction-form {
+  margin-top: 15px !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  padding: 15px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  animation: fadeIn 0.3s ease !important;
+}
+
+.matches-tab .prediction-form h4 {
+  margin-top: 0 !important;
+  margin-bottom: 10px !important;
+}
+
+/* Prediction input */
+.matches-tab .prediction-input {
+  width: 100% !important;
+  padding: 10px !important;
+  border-radius: 4px !important;
+  border: 1px solid #ddd !important;
+  margin-bottom: 10px !important;
+  font-size: 1rem !important;
+}
+
+.matches-tab .prediction-input:focus {
+  outline: none !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(0, 120, 188, 0.1) !important;
+}
+
+/* Save button */
+.matches-tab .save-button {
+  background-color: #4caf50 !important;
+  color: white !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+.matches-tab .save-button:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+}
+
+.matches-tab .save-button:hover:not(:disabled) {
+  background-color: #45a049 !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Saved prediction */
+.matches-tab .saved-prediction {
+  margin-top: 10px !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
+  border-left: 4px solid #4caf50 !important;
+  animation: fadeIn 0.3s ease !important;
+  font-size: 0.9rem !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Match header */
+.matches-tab .match-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 15px !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .matches-tab .match-teams {
@@ -252,22 +379,16 @@
   
   .matches-tab .team-logo-badge {
     width: 100% !important;
-    flex-direction: row !important;
-    justify-content: center !important;
+    max-width: none !important;
   }
   
   .matches-tab .vs {
-    margin: 10px 0 !important;
+    margin: 5px 0 !important;
   }
   
   .matches-tab .match-info {
     flex-direction: column !important;
-    gap: 8px !important;
     align-items: flex-start !important;
-  }
-  
-  .matches-tab .match-team-logo {
-    width: 40px !important;
-    height: 40px !important;
+    gap: 10px !important;
   }
 } 

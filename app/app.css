@@ -1160,7 +1160,7 @@ a {
 }
 
 /* Match layout restructuring */
-.matches-list {
+.app-matches-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
@@ -1168,7 +1168,7 @@ a {
 }
 
 @media (max-width: 768px) {
-  .matches-list {
+  .app-matches-list {
     grid-template-columns: 1fr;
   }
 }
