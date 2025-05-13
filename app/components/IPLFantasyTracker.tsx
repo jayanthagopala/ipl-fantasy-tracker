@@ -1022,17 +1022,6 @@ export default function IPLFantasyTracker() {
                         </div>
                         <div className="user-details">
                           <div className="user-team">{entry.team_name}</div>
-                          {highestScoreMatch && (
-                            <div className="user-highest">
-                              Top: <span className="highest-value">{highestScoreMatch.points.toFixed(1)}</span> pts
-                            </div>
-                          )}
-                          <div className="performance-bar">
-                            <div 
-                              className="performance-bar-fill" 
-                              style={{ width: `${performancePercentage}%` }}
-                            ></div>
-                          </div>
                         </div>
                         <div className="user-total-points">{entry.totalPoints.toFixed(2)}</div>
                         
