@@ -517,17 +517,6 @@
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
-.points-summary-title {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 1rem;
-  color: #333;
-  font-weight: 600;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 10px;
-  text-align: center;
-}
-
 .fantasy-points-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -576,6 +565,33 @@
 .user-points-entry .user-points[data-points="0"] {
   background-color: #9e9e9e;
   box-shadow: 0 2px 4px rgba(158, 158, 158, 0.3);
+}
+
+/* Points summary in schedule tab */
+.matches-tab .fantasy-points-summary {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.matches-tab .fantasy-points-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.matches-tab .user-points-entry {
+  padding: 6px 10px;
+}
+
+@media (max-width: 768px) {
+  .matches-tab .fantasy-points-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Match status indicators */
@@ -1428,4 +1444,15 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23FFD700' stroke='%23E6B800' /%3E%3Ccircle cx='12' cy='12' r='6' fill='%23FFEC80' stroke='none' /%3E%3C/svg%3E");
   background-size: contain;
   background-repeat: no-repeat;
+}
+
+.points-summary-title {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  text-align: center;
 } 

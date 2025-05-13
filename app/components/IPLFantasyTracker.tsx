@@ -1132,7 +1132,7 @@ export default function IPLFantasyTracker() {
                   const awayTeamCode = getTeamCode(match.awayTeam);
                   const gradientClass = `${homeTeamCode}-gradient`;
                   const matchStatus = getMatchStatus(match);
-                  const hasPoints = fantasyPoints.some(p => p.matchNo === match.matchNo);
+                  const hasPrediction = predictions.some(p => p.matchNo === match.matchNo);
                   
                   return (
                     <li 
@@ -1259,7 +1259,13 @@ export default function IPLFantasyTracker() {
                         </div>
                       )}
                       
-                      {!selectedAdminMatch && hasPoints && (
+                      {!selectedAdminMatch && hasPrediction && (
+                        <div className="saved-prediction">
+                          <strong>Your prediction:</strong> {getPredictionForMatch(match.matchNo)}
+                        </div>
+                      )}
+                      
+                      {fantasyPoints.some(p => p.matchNo === match.matchNo) && !selectedAdminMatch && (
                         <div className="fantasy-points-summary">
                           <h4 className="points-summary-title">Recorded Points</h4>
                           <div className="fantasy-points-grid">
@@ -1422,6 +1428,60 @@ export default function IPLFantasyTracker() {
                       {hasPrediction && !selectedMatch && (
                         <div className="saved-prediction">
                           <strong>Your prediction:</strong> {getPredictionForMatch(match.matchNo)}
+                        </div>
+                      )}
+                      
+                      {fantasyPoints.some(p => p.matchNo === match.matchNo) && !selectedMatch && (
+                        <div className="fantasy-points-summary">
+                          <h4 className="points-summary-title">Dream11 Points</h4>
+                          <div className="fantasy-points-grid">
+                            {FANTASY_USERS
+                              // Map users to their points and filter out those without points
+                              .map(user => ({
+                                user,
+                                points: getPointsForMatch(match.matchNo, user.id)
+                              }))
+                              .filter(item => item.points !== null)
+                              // Sort by points in descending order
+                              .sort((a, b) => (b.points || 0) - (a.points || 0))
+                              .map((item, index) => {
+                                const { user, points } = item;
+                                // Determine rank (index + 1 since array is already sorted)
+                                const userRank = index + 1;
+                                // Get coins based on rank
+                                const coinsEarned = getCoinsForRank(userRank);
+                                
+                                // Determine if user is in top 3
+                                let medalElement = null;
+                                if (userRank === 1) {
+                                  medalElement = <span className="medal gold-medal">🥇</span>;
+                                } else if (userRank === 2) {
+                                  medalElement = <span className="medal silver-medal">🥈</span>;
+                                } else if (userRank === 3) {
+                                  medalElement = <span className="medal bronze-medal">🥉</span>;
+                                }
+                                
+                                return (
+                                  <div key={user.id} className={`user-points-entry ${userRank <= 3 ? `rank-${userRank}` : ''}`}>
+                                    <span className="user-name">
+                                      {medalElement}
+                                      {user.team_name}
+                                    </span>
+                                    <div className="points-coin-container">
+                                      <span className="user-points" data-points={points}>{points}</span>
+                                      <span className={`user-coins ${coinsEarned >= 0 ? 'positive' : 'negative'}`}>
+                                        <svg className="coin-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                          <circle cx="12" cy="12" r="9" fill="#FFD700" stroke="#E6B800" />
+                                          <circle cx="12" cy="12" r="6" fill="#FFEC80" stroke="none" />
+                                        </svg>
+                                        {coinsEarned >= 0 ? '+' : ''}{coinsEarned}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            }
+                          </div>
                         </div>
                       )}
                       
