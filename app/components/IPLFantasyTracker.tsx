@@ -415,6 +415,30 @@ export default function IPLFantasyTracker() {
         setJsonError("Input must be an array of user points");
         return null;
       }
+
+      // Verify all expected teams are present with exact names
+      const expectedTeamNames = FANTASY_USERS.map(user => user.team_name);
+      const inputTeamNames = parsedData.map(entry => entry.team_name);
+      
+      // Check if any expected team is missing
+      const missingTeams = expectedTeamNames.filter(teamName => !inputTeamNames.includes(teamName));
+      if (missingTeams.length > 0) {
+        setJsonError(`Missing teams: ${missingTeams.join(', ')}`);
+        return null;
+      }
+      
+      // Check if there are any unexpected teams
+      const unexpectedTeams = inputTeamNames.filter(teamName => !expectedTeamNames.includes(teamName));
+      if (unexpectedTeams.length > 0) {
+        setJsonError(`Unknown teams: ${unexpectedTeams.join(', ')}`);
+        return null;
+      }
+
+      // Ensure we have exactly the right number of teams
+      if (parsedData.length !== FANTASY_USERS.length) {
+        setJsonError(`Expected ${FANTASY_USERS.length} teams, got ${parsedData.length}`);
+        return null;
+      }
       
       const validPoints: FantasyPoints[] = [];
       const matchNo = selectedAdminMatch as number;
@@ -1284,29 +1308,6 @@ export default function IPLFantasyTracker() {
                             {jsonError && (
                               <div className="json-error-message">{jsonError}</div>
                             )}
-                            <div className="json-help-text">
-                              <p>Enter points as a JSON array with team_name and points for each user:</p>
-                              <pre onClick={(e) => e.stopPropagation()}>
-{`[
-  { "team_name": "CheemsRajah", "points": 85.5 },
-  { "team_name": "Anantha Team", "points": 92.0 }
-]`}
-                              </pre>
-                              <button 
-                                className="template-button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Create template JSON with all users
-                                  const templateJson = FANTASY_USERS.map(user => ({
-                                    team_name: user.team_name,
-                                    points: 0
-                                  }));
-                                  setJsonPointsInput(JSON.stringify(templateJson, null, 2));
-                                }}
-                              >
-                                Insert Template
-                              </button>
-                            </div>
                           </div>
                           <button 
                             className="save-points-button"
@@ -1333,7 +1334,9 @@ export default function IPLFantasyTracker() {
                       
                       {fantasyPoints.some(p => p.matchNo === match.matchNo) && !selectedAdminMatch && (
                         <div className="fantasy-points-summary">
-                          <h4 className="points-summary-title">Recorded Points</h4>
+                          <div className="points-summary-header">
+                            <h4 className="points-summary-title">Dream11 Points</h4>
+                          </div>
                           <div className="fantasy-points-grid">
                             {FANTASY_USERS
                               // Map users to their points and filter out those without points
@@ -1499,7 +1502,9 @@ export default function IPLFantasyTracker() {
                       
                       {fantasyPoints.some(p => p.matchNo === match.matchNo) && !selectedMatch && (
                         <div className="fantasy-points-summary">
-                          <h4 className="points-summary-title">Dream11 Points</h4>
+                          <div className="points-summary-header">
+                            <h4 className="points-summary-title">Dream11 Points</h4>
+                          </div>
                           <div className="fantasy-points-grid">
                             {FANTASY_USERS
                               // Map users to their points and filter out those without points
