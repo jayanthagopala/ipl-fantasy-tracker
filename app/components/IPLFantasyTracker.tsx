@@ -780,7 +780,8 @@ export default function IPLFantasyTracker() {
         averageScore: user.average_score || 0,
         lastMatchPoints: user.last_match_points || 0,
         position_change: user.position_change || 0
-      })).sort((a, b) => b.totalPoints - a.totalPoints);
+      // Sort by totalCoins instead of totalPoints
+      })).sort((a, b) => b.totalCoins - a.totalCoins);
     }
     
     // If no user stats available, calculate from fantasy points
@@ -812,8 +813,8 @@ export default function IPLFantasyTracker() {
       });
     });
     
-    // Sort by total points (descending)
-    return userTotals.sort((a, b) => b.totalPoints - a.totalPoints);
+    // Sort by totalCoins instead of totalPoints (descending)
+    return userTotals.sort((a, b) => b.totalCoins - a.totalCoins);
   }
   
   // Calculate total coins earned by a user across all matches
