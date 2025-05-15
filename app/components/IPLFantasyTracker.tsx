@@ -1530,19 +1530,7 @@ export default function IPLFantasyTracker() {
                   </div>
                 </div>
                 
-                <div className="additional-stats">
-                  <h3>Match Statistics</h3>
-                  <div className="stats-summary">
-                    <div className="stat-summary-item">
-                      <div className="stat-label">Matches Completed</div>
-                      <div className="stat-number">{getCompletedMatchesCount()}</div>
-                    </div>
-                    <div className="stat-summary-item">
-                      <div className="stat-label">Highest Score</div>
-                      <div className="stat-number">{getHighestMatchScore().toFixed(2)} pts</div>
-                    </div>
-                  </div>
-                </div>
+                {/* Match Statistics section removed */}
               </div>
             ) : (
               <div className="empty-state">
